@@ -1,5 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400&family=Manrope:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
+@font-face {
+  font-family: 'Pixelify Sans';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('./assets/fonts/PixelifySans.woff2') format('woff2');
+}
+
 :root {
   font-family: 'Manrope', Arial, sans-serif;
   color: #f3f8f4;
@@ -212,12 +220,16 @@ a {
   display: flex;
   flex-direction: column;
   margin: 0;
-  font-family: 'Space Grotesk', 'Manrope', sans-serif;
-  font-size: clamp(3.8rem, 8vw, 9.4rem);
+  font-family: 'Pixelify Sans', 'Space Grotesk', 'Manrope', sans-serif;
+  font-size: clamp(4.4rem, 9.2vw, 10.8rem);
   font-weight: 700;
-  line-height: 1.08;
-  letter-spacing: 0.012em;
+  line-height: 1.02;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: auto;
+  font-smooth: never;
+  text-rendering: geometricPrecision;
 }
 
 .hero__title > span,
@@ -954,8 +966,21 @@ body {
   }
 
   .hero__title {
+    font-family: 'Space Grotesk', 'Manrope', sans-serif;
     font-size: clamp(3.4rem, 15vw, 6rem);
+    font-weight: 700;
     line-height: 1.05;
+    letter-spacing: 0.012em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .about__title {
+    font-family: 'Space Grotesk', 'Manrope', sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.05em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   .hero__title strong,
@@ -1799,12 +1824,16 @@ body,
 .about__title {
   margin: 0 0 clamp(1.6rem, 3.5vh, 2.6rem);
   color: rgba(246, 252, 248, 0.96);
-  font-family: 'Space Grotesk', 'Manrope', sans-serif;
-  font-size: clamp(2.7rem, 6vw, 6.6rem);
-  font-weight: 600;
+  font-family: 'Pixelify Sans', 'Space Grotesk', 'Manrope', sans-serif;
+  font-size: clamp(3.2rem, 7vw, 7.8rem);
+  font-weight: 700;
   line-height: 0.94;
-  letter-spacing: -0.05em;
+  letter-spacing: 0.01em;
   text-transform: uppercase;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: auto;
+  font-smooth: never;
+  text-rendering: geometricPrecision;
 }
 
 .about__statement {

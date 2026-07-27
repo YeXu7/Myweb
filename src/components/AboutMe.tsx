@@ -57,7 +57,7 @@ export function AboutMe({ language = 'en' }: AboutMeProps) {
               cell={11}
               gap={0.1}
               color="#f6fcf8"
-              opacity={0.85}
+              opacity={0.7}
               ariaLabel={content.title}
             />
           </h2>

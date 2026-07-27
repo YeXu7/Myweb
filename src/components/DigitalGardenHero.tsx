@@ -48,7 +48,7 @@ export function DigitalGardenHero({ language = 'en' }: DigitalGardenHeroProps) {
               cell={12}
               gap={0.1}
               color="#cdf5d8"
-              opacity={0.85}
+              opacity={0.7}
               ariaLabel={`${content.greeting} ${content.name}`}
             />
           </h1>

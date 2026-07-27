@@ -179,8 +179,8 @@ const GLYPHS: Record<string, string[]> = {
 
 const GLYPH_W = 5
 const GLYPH_H = 7
-/** 字符之间空的格子数 */
-const CHAR_SPACING = 1
+/** 字符之间空的格子数（0 = 字母紧挨，靠字模自带边列留白） */
+const CHAR_SPACING = 0
 /** 逗号/撇号等标点宽度较窄，仍占标准格宽以保持网格对齐 */
 
 export type PixelTextProps = {
@@ -192,7 +192,7 @@ export type PixelTextProps = {
   gap?: number
   /** 方块颜色。默认 hero 绿 */
   color?: string
-  /** 方块透明度 0~1（参考图略降低）。默认 0.85 */
+  /** 方块透明度 0~1（参考图略降低）。默认 0.7 */
   opacity?: number
   /** 行与行之间的额外空行数（以格计）。默认 2 */
   lineGapCells?: number
@@ -207,7 +207,7 @@ export function PixelText({
   cell = 12,
   gap = 0.1,
   color = '#cdf5d8',
-  opacity = 0.85,
+  opacity = 0.7,
   lineGapCells = 2,
   className,
   ariaLabel,

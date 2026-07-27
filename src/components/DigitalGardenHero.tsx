@@ -45,7 +45,7 @@ export function DigitalGardenHero({ language = 'en' }: DigitalGardenHeroProps) {
             <PixelText
               className="hero__pixel"
               lines={[content.greeting, content.name]}
-              cell={12}
+              cell={9}
               gap={0.1}
               color="#cdf5d8"
               opacity={0.7}

@@ -54,7 +54,7 @@ export function AboutMe({ language = 'en' }: AboutMeProps) {
             <PixelText
               className="about__pixel"
               lines={[content.title]}
-              cell={11}
+              cell={8}
               gap={0.1}
               color="#f6fcf8"
               opacity={0.7}

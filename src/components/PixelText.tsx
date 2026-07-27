@@ -179,8 +179,8 @@ const GLYPHS: Record<string, string[]> = {
 
 const GLYPH_W = 5
 const GLYPH_H = 7
-/** 字符之间空的格子数（0 = 字母紧挨，靠字模自带边列留白） */
-const CHAR_SPACING = 0
+/** 字符之间空的格子数（0.5 = 半格 tracking，字母清楚分开又不散） */
+const CHAR_SPACING = 0.5
 /** 逗号/撇号等标点宽度较窄，仍占标准格宽以保持网格对齐 */
 
 export type PixelTextProps = {

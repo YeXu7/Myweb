@@ -1,0 +1,27 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# build output
+dist/
+*.tsbuildinfo
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# editors / OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# env
+.env
+.env.local
+.env.*.local
+
+# preview screenshots (optional — keep source but not artifacts)
+review-*.png

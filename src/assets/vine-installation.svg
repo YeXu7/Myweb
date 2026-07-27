@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 920" fill="none">
+  <defs>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(316 424) rotate(90) scale(430 220)">
+      <stop stop-color="#b9ffd8" stop-opacity=".55"/>
+      <stop offset=".34" stop-color="#72b7ff" stop-opacity=".32"/>
+      <stop offset=".72" stop-color="#915bff" stop-opacity=".2"/>
+      <stop offset="1" stop-color="#020b0a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="stem" x1="216" y1="42" x2="428" y2="876" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#c8ffe2" stop-opacity=".9"/>
+      <stop offset=".35" stop-color="#6ad7ff" stop-opacity=".62"/>
+      <stop offset=".68" stop-color="#ad6cff" stop-opacity=".5"/>
+      <stop offset="1" stop-color="#d4ffe8" stop-opacity=".78"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="80" y1="88" x2="552" y2="826" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#88f8d1" stop-opacity=".72"/>
+      <stop offset=".45" stop-color="#7ebcff" stop-opacity=".44"/>
+      <stop offset="1" stop-color="#bc7aff" stop-opacity=".62"/>
+    </linearGradient>
+    <filter id="soft" x="-35%" y="-20%" width="170%" height="140%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+    <filter id="shine" x="-35%" y="-20%" width="170%" height="140%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <ellipse cx="316" cy="424" rx="246" ry="432" fill="url(#glow)" filter="url(#soft)"/>
+  <g opacity=".34" filter="url(#soft)">
+    <path d="M262 94c-64 66-56 142 23 226 102 108 102 210 4 306-59 58-63 128-12 210" stroke="#7cfbd1" stroke-width="28" stroke-linecap="round"/>
+    <path d="M374 70c68 82 54 155-42 220-112 76-126 177-40 304 54 80 38 159-48 238" stroke="#996dff" stroke-width="22" stroke-linecap="round"/>
+  </g>
+  <g filter="url(#shine)">
+    <path d="M288 52c-78 88-66 180 36 276 110 104 107 201-8 292-78 62-82 143-12 244" stroke="url(#stem)" stroke-width="12" stroke-linecap="round"/>
+    <path d="M380 48c68 84 50 158-54 224-114 73-126 174-36 304 58 84 39 168-56 252" stroke="url(#stem)" stroke-width="7" stroke-linecap="round" stroke-dasharray="26 22"/>
+    <path d="M318 184c-70-28-126-24-168 12 64 48 121 50 171 6" fill="url(#leaf)" opacity=".62"/>
+    <path d="M356 288c64-58 126-74 186-48-42 72-102 91-181 57" fill="url(#leaf)" opacity=".48"/>
+    <path d="M276 438c-78-18-136 0-174 54 78 34 138 18 179-48" fill="url(#leaf)" opacity=".42"/>
+    <path d="M372 536c74-44 138-44 192 0-58 58-122 64-192 10" fill="url(#leaf)" opacity=".46"/>
+    <path d="M278 702c-64-22-116-10-156 36 66 42 120 34 160-24" fill="url(#leaf)" opacity=".5"/>
+  </g>
+  <g opacity=".72">
+    <circle cx="214" cy="170" r="6" fill="#d8ffe7"/>
+    <circle cx="480" cy="252" r="5" fill="#c7e7ff"/>
+    <circle cx="142" cy="500" r="4" fill="#d8ffe7"/>
+    <circle cx="472" cy="610" r="6" fill="#e3ccff"/>
+    <circle cx="254" cy="780" r="5" fill="#d8ffe7"/>
+  </g>
+</svg>

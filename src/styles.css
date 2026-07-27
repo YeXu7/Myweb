@@ -1,13 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400&family=Manrope:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
-@font-face {
-  font-family: 'Pixelify Sans';
-  font-style: normal;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url('./assets/fonts/PixelifySans.woff2') format('woff2');
-}
-
 :root {
   font-family: 'Manrope', Arial, sans-serif;
   color: #f3f8f4;
@@ -217,30 +209,20 @@ a {
 }
 
 .hero__title {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  font-family: 'Pixelify Sans', 'Space Grotesk', 'Manrope', sans-serif;
-  font-size: clamp(4.4rem, 9.2vw, 10.8rem);
-  font-weight: 700;
-  line-height: 1.02;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  -webkit-font-smoothing: none;
-  -moz-osx-font-smoothing: auto;
-  font-smooth: never;
-  text-rendering: geometricPrecision;
-}
-
-.hero__title > span,
-.hero__title > strong {
   display: block;
+  margin: 0;
 }
 
-.hero__title strong {
-  margin-left: clamp(0rem, 3.5vw, 4rem);
-  color: #d7ffdf;
-  font-weight: 700;
+/* LED 点阵标题 canvas：等比缩放至容器宽度，锐利像素不抗锯齿 */
+.hero__pixel {
+  display: block;
+  width: clamp(280px, 62vw, 760px);
+  height: auto;
+  image-rendering: pixelated;
+}
+
+.hero.is-ready .hero__pixel {
+  animation: heroFade 0.7s ease 0.25s both;
 }
 
 .hero__identity {
@@ -924,16 +906,6 @@ body {
   animation: heroFade 0.55s ease 0.08s both;
 }
 
-/* 字符逐个从下方浮上 + 轻微左右错位 + blur + scale，柔和归位（回弹极轻；延迟由 JS 逐字设置） */
-.hero.is-ready .hero__letter {
-  animation: letterAlign 0.6s cubic-bezier(0.2, 0.75, 0.25, 1.04) both;
-}
-
-/* YULIA XU. 落位后的克制淡绿微光 */
-.hero.is-ready .hero__title strong {
-  animation: nameGlow 1s ease-out 1.4s both;
-}
-
 /* 小字信息：标题完成后再淡入 */
 .hero.is-ready .hero__header {
   animation: heroFade 0.5s ease 1.3s both;
@@ -965,25 +937,14 @@ body {
     width: calc(100% - 2.5rem);
   }
 
-  .hero__title {
-    font-family: 'Space Grotesk', 'Manrope', sans-serif;
-    font-size: clamp(3.4rem, 15vw, 6rem);
-    font-weight: 700;
-    line-height: 1.05;
-    letter-spacing: 0.012em;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+  .hero__pixel {
+    width: min(84vw, 460px);
   }
 
-  .about__title {
-    font-family: 'Space Grotesk', 'Manrope', sans-serif;
-    font-weight: 600;
-    letter-spacing: -0.05em;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+  .about__pixel {
+    width: min(60vw, 300px);
   }
 
-  .hero__title strong,
   .hero__identity {
     margin-left: 0;
   }
@@ -1079,9 +1040,7 @@ body {
   .hero__quiet-zone,
   .hero__header,
   .hero__eyebrow,
-  .hero__title span,
-  .hero__title strong,
-  .hero__letter,
+  .hero__pixel,
   .hero__identity,
   .hero__footer {
     animation: none !important;
@@ -1823,17 +1782,14 @@ body,
 
 .about__title {
   margin: 0 0 clamp(1.6rem, 3.5vh, 2.6rem);
-  color: rgba(246, 252, 248, 0.96);
-  font-family: 'Pixelify Sans', 'Space Grotesk', 'Manrope', sans-serif;
-  font-size: clamp(3.2rem, 7vw, 7.8rem);
-  font-weight: 700;
-  line-height: 0.94;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
-  -webkit-font-smoothing: none;
-  -moz-osx-font-smoothing: auto;
-  font-smooth: never;
-  text-rendering: geometricPrecision;
+  display: block;
+}
+
+.about__pixel {
+  display: block;
+  width: clamp(200px, 34vw, 420px);
+  height: auto;
+  image-rendering: pixelated;
 }
 
 .about__statement {

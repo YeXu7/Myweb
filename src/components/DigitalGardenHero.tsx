@@ -1,37 +1,6 @@
-import { useEffect, useState, type CSSProperties } from 'react'
+import { useEffect, useState } from 'react'
 import { heroContent } from '../garden/content'
-
-// 标题逐字符入场：每个字符带轻微上下/左右错位 + 低透明 + blur，按顺序柔和回位（信号对齐感）
-function SplitLetters({
-  text,
-  baseDelay,
-  step,
-}: {
-  text: string
-  baseDelay: number
-  step: number
-}) {
-  return (
-    <>
-      {Array.from(text).map((ch, i) => (
-        <span
-          key={`${i}-${ch}`}
-          className="hero__letter"
-          aria-hidden="true"
-          style={
-            {
-              '--lx': `${((i * 37) % 13) - 6}px`,
-              '--ly': `${12 + ((i * 53) % 13)}px`,
-              animationDelay: `${baseDelay + i * step}s`,
-            } as CSSProperties
-          }
-        >
-          {ch}
-        </span>
-      ))}
-    </>
-  )
-}
+import { PixelText } from './PixelText'
 
 type DigitalGardenHeroProps = {
   language?: 'en' | 'zh'
@@ -73,12 +42,15 @@ export function DigitalGardenHero({ language = 'en' }: DigitalGardenHeroProps) {
             <span>{content.eyebrow}</span>
           </p>
           <h1 className="hero__title" aria-label={`${content.greeting} ${content.name}`}>
-            <span aria-hidden="true">
-              <SplitLetters text={content.greeting} baseDelay={0.2} step={0.07} />
-            </span>
-            <strong aria-hidden="true">
-              <SplitLetters text={content.name} baseDelay={0.62} step={0.07} />
-            </strong>
+            <PixelText
+              className="hero__pixel"
+              lines={[content.greeting, content.name]}
+              cell={12}
+              gap={0.1}
+              color="#cdf5d8"
+              opacity={0.85}
+              ariaLabel={`${content.greeting} ${content.name}`}
+            />
           </h1>
           <div className="hero__identity">
             <p className="hero__role">{content.role}</p>

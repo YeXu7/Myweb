@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { aboutContent } from '../garden/content'
+import { PixelText } from './PixelText'
 
 type AboutMeProps = {
   language?: 'en' | 'zh'
@@ -49,8 +50,16 @@ export function AboutMe({ language = 'en' }: AboutMeProps) {
 
       <div className="about__body">
         <div className="about__lead">
-          <h2 className="about__title" id="about-title">
-            {content.title}
+          <h2 className="about__title" id="about-title" aria-label={content.title}>
+            <PixelText
+              className="about__pixel"
+              lines={[content.title]}
+              cell={11}
+              gap={0.1}
+              color="#f6fcf8"
+              opacity={0.85}
+              ariaLabel={content.title}
+            />
           </h2>
           <p className="about__statement">{content.statement}</p>
         </div>

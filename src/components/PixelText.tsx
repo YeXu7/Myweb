@@ -179,8 +179,13 @@ const GLYPHS: Record<string, string[]> = {
 
 const GLYPH_W = 5
 const GLYPH_H = 7
-/** 字符之间空的格子数（0.5 = 半格 tracking，字母清楚分开又不散） */
-const CHAR_SPACING = 0.5
+/**
+ * 字模盒宽：字形本身占 5 列，右侧固定再留 1 列作为“右边距”，共 6 列推进。
+ * 这样即使 Y/X/u 这类用满 5 列的字母，相邻时也有 1 列固定缝，字偶间距天然均匀。
+ */
+const GLYPH_ADVANCE = GLYPH_W + 1
+/** 字符之间的额外间距（盒宽已含 1 列右边距，这里保持 0 即可） */
+const CHAR_SPACING = 0
 /** 逗号/撇号等标点宽度较窄，仍占标准格宽以保持网格对齐 */
 
 export type PixelTextProps = {
@@ -230,8 +235,8 @@ export function PixelText({
             }
           }
         }
-        colCursor += GLYPH_W
-        if (idx < chars.length - 1) colCursor += CHAR_SPACING
+        // 行尾字符不加右边距，避免右侧多出一列空白
+        colCursor += idx < chars.length - 1 ? GLYPH_ADVANCE + CHAR_SPACING : GLYPH_W
       })
       maxCols = Math.max(maxCols, colCursor)
     })

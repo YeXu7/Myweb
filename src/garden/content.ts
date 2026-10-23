@@ -1,5 +1,7 @@
 export const heroContent = {
   en: {
+    intro: ['I’m Yulia Xu,', 'a UI/UX designer', 'with 3 years working experience.'],
+    practice: ['I design intuitive tools', 'in the film and video industry,', 'with AI tools into', 'my daily design workflow.'],
     eyebrow: 'DESIGN PORTFOLIO · YULIA · 2026',
     greeting: "Hi, I’m",
     name: 'Yulia Xu',
@@ -8,6 +10,8 @@ export const heroContent = {
     scroll: 'Scroll to explore',
   },
   zh: {
+    intro: ['我是 Yulia，', '一名 UI/UX 设计师，', '拥有 3 年设计经验。'],
+    practice: ['为影像制作', '设计易用的工具，', '并将 AI 融入', '日常设计工作流。'],
     eyebrow: 'DESIGN PORTFOLIO · YULIA · 2026',
     greeting: '你好，我是',
     name: 'Yulia Xu',
@@ -16,6 +20,17 @@ export const heroContent = {
     scroll: '向下探索',
   },
 } as const
+
+export const heroContinuation = [
+  [
+    'My work spans toB and toC products.',
+    'Beyond the interface,',
+    'I explore motion, creative coding, and AI',
+    '— building prototypes to see',
+    'how an idea moves, and works.',
+  ],
+  ['Here are 4 selected projects,', 'a closer look at how I design.'],
+] as const
 
 export const aboutContent = {
   en: {

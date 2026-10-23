@@ -88,10 +88,12 @@ a {
   cursor: crosshair;
   background:
     linear-gradient(95deg, rgba(1, 18, 16, 0.4) 0%, transparent 46%),
-    url('./assets/digital-garden-hero.png') center / cover no-repeat;
+    url('./assets/digital-garden-panorama.png') center / cover no-repeat;
 }
 
+.garden-scene[data-webgl-ready='true'] .garden-canvas { opacity: 1; }
 .garden-canvas {
+  opacity: 0;
   display: block;
   width: 100%;
   height: 100%;
@@ -1097,12 +1099,39 @@ body,
 .shared-garden {
   z-index: 0;
   filter:
-    blur(calc(var(--first-screen-progress) * 14px))
-    brightness(calc(1 - var(--first-screen-progress) * 0.28))
-    saturate(calc(1 - var(--first-screen-progress) * 0.1));
-  transform: scale(calc(1 + var(--first-screen-progress) * 0.014));
-  transition: filter 120ms linear, transform 120ms linear;
+    blur(calc(var(--background-defocus, 0) * 14px))
+    brightness(calc(1 - var(--background-defocus, 0) * 0.28))
+    saturate(calc(1 - var(--background-defocus, 0) * 0.1));
+  transform: scale(var(--background-scale, 1));
   will-change: filter, transform;
+}
+
+.shared-garden::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: var(--reading-shade, 0);
+  background: linear-gradient(90deg, rgba(0, 0, 0, .66) 0%, rgba(0, 0, 0, .60) 10%, rgba(0, 0, 0, .42) 17%, rgba(0, 0, 0, .16) 25%, transparent 34%);
+}
+
+.shared-garden::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: var(--reading-shade, 0);
+  background: radial-gradient(ellipse 44% 49% at 26% 54%, rgba(0, 0, 0, .34) 0%, rgba(0, 0, 0, .28) 45%, rgba(0, 0, 0, .12) 72%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 15%, #000 30%, #000 78%, transparent 92%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 15%, #000 30%, #000 78%, transparent 92%);
+}
+
+@media (max-width: 800px) {
+  .shared-garden::after {
+    background: radial-gradient(ellipse 90% 50% at 50% 54%, rgba(0, 0, 0, .32) 0%, rgba(0, 0, 0, .26) 45%, rgba(0, 0, 0, .11) 72%, transparent 100%);
+  }
 }
 
 .hero__quiet-zone {

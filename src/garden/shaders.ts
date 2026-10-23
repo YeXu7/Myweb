@@ -12,7 +12,7 @@ export const fragmentShader = /* glsl */ `
 
   uniform sampler2D uTexture;
   uniform vec2 uResolution;
-  uniform vec2 uImageResolution;
+  uniform vec4 uCrop;
   uniform vec2 uPointer;
   uniform vec2 uPointerTarget;
   uniform float uTime;
@@ -32,17 +32,9 @@ export const fragmentShader = /* glsl */ `
   }
 
   vec2 coverUv(vec2 uv) {
-    float screenAspect = uResolution.x / max(uResolution.y, 1.0);
-    float imageAspect = uImageResolution.x / max(uImageResolution.y, 1.0);
-    vec2 scale = vec2(1.0);
-
-    if (screenAspect > imageAspect) {
-      scale.y = imageAspect / screenAspect;
-    } else {
-      scale.x = screenAspect / imageAspect;
-    }
-
-    return (uv - 0.5) * scale + 0.5;
+    // Keep water, pointer and mosaic coordinates in viewport space. Only the
+    // final image lookup uses the shared, proportionally scaled crop rectangle.
+    return uCrop.xy + uv * uCrop.zw;
   }
 
   float safeZone(vec2 uv) {

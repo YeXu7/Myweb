@@ -1,0 +1,10 @@
+{
+  "family": "Ma Shan Zheng",
+  "upstream": "https://github.com/googlefonts/mashanzheng",
+  "license": "SIL Open Font License 1.1",
+  "subset_text": "灵机腾讯视频端如影即行返回查看",
+  "source_css": "https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap&text=%E7%81%B5%E6%9C%BA%E8%85%BE%E8%AE%AF%E8%A7%86%E9%A2%91%E7%AB%AF%E5%A6%82%E5%BD%B1%E5%8D%B3%E8%A1%8C%E8%BF%94%E5%9B%9E%E6%9F%A5%E7%9C%8B",
+  "source_font": "https://fonts.gstatic.com/l/font?kit=NaPecZTRCLxvwo41b4gvzkXaRMT0JWne1VkCL4eYRx0zDpkCHqjg1oI2kRCdPxTSetWSrnPv1cm_8PvralZZrWf2IA&skey=13c999d73b164fc8&v=v18",
+  "sha256": "ef240fc5c898ca19f66140adb747b83ceb8a8430d46d0ae513021e2aee2819f1",
+  "note": "Google Fonts text subset for current gallery Chinese titles and buttons; Latin uses incumbent IM Fell English."
+}

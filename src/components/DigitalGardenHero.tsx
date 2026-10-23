@@ -1,71 +1,44 @@
-import { useEffect, useState } from 'react'
-import { heroContent } from '../garden/content'
-import { PixelText } from './PixelText'
+import { useRef } from 'react'
+import { heroContent, heroContinuation } from '../garden/content'
+import { useHeroReading } from '../hooks/useHeroReading'
+import '../styles/hero-reading.css'
 
-type DigitalGardenHeroProps = {
-  language?: 'en' | 'zh'
-}
-
-export function DigitalGardenHero({ language = 'en' }: DigitalGardenHeroProps) {
+export function DigitalGardenHero({ language = 'en' }: { language?: 'en' | 'zh' }) {
   const content = heroContent[language]
-  const [ready, setReady] = useState(false)
-
-  // 不在 mount 时立刻播放：等字体+背景就绪后再延迟约 400ms，给 hero 加 is-ready 才开始入场
-  useEffect(() => {
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
-      setReady(true)
-      return
-    }
-    let timer = 0
-    const begin = () => {
-      timer = window.setTimeout(() => setReady(true), 400)
-    }
-    if (document.fonts?.ready) {
-      document.fonts.ready.then(begin).catch(begin)
-    } else {
-      begin()
-    }
-    return () => window.clearTimeout(timer)
-  }, [])
-
+  const heroRef = useRef<HTMLElement>(null)
+  useHeroReading(heroRef)
   return (
-      <section
-        id="top"
-        className={`hero snap-section${ready ? ' is-ready' : ''}`}
-        aria-label="Yulia portfolio introduction"
-      >
-        <div className="hero__quiet-zone" aria-hidden="true" />
-        <div className="hero__grain" aria-hidden="true" />
-
-        <div className="hero__content">
-          <p className="hero__eyebrow">
-            <span>{content.eyebrow}</span>
-          </p>
-          <h1 className="hero__title" aria-label={`${content.greeting} ${content.name}`}>
-            <PixelText
-              className="hero__pixel"
-              lines={[content.greeting, content.name]}
-              cell={9}
-              gap={0.1}
-              color="#cdf5d8"
-              opacity={0.7}
-              ariaLabel={`${content.greeting} ${content.name}`}
-            />
-          </h1>
-          <div className="hero__identity">
-            <p className="hero__role">{content.role}</p>
-            <p className="hero__statement">{content.statement}</p>
+    <section ref={heroRef} id="top" className="hero snap-section is-ready garden-intro" aria-label="Yulia portfolio introduction" lang={language}>
+      <div className="hero__quiet-zone" aria-hidden="true" />
+      <div className="hero__grain" aria-hidden="true" />
+      <div className="garden-intro__stage">
+        <p className="hero__eyebrow garden-intro__stamp">
+          <span>{content.eyebrow}</span>
+        </p>
+        <div className="garden-intro__window" data-reading-window>
+          <div className="garden-intro__track" data-reading-track>
+            <h1 id="intro-title" className="garden-intro__paragraph">
+              {content.intro.map((line) => (
+                <span className="garden-intro__line" data-reading-line key={line}>{line}{' '}</span>
+              ))}
+            </h1>
+            <p className="garden-intro__paragraph">
+              {content.practice.map((line) => (
+                <span className="garden-intro__line" data-reading-line key={line}>
+                  {line}{' '}
+                </span>
+              ))}
+            </p>
+            {language === 'en' && heroContinuation.map((paragraph, index) => (
+              <p className="garden-intro__paragraph" data-reading-continuation={index === 0 ? '' : undefined} key={paragraph[0]}>
+                {paragraph.map(line => (
+                  <span className="garden-intro__line" data-reading-line key={line}>{line}{' '}</span>
+                ))}
+              </p>
+            ))}
           </div>
         </div>
-
-        <div className="hero__footer">
-          <p className="hero__location">Shenzhen · China</p>
-          <p className="scroll-cue" aria-label="Projects section planned for the next screen">
-            <span>{content.scroll}</span>
-            <span className="scroll-cue__line" aria-hidden="true" />
-          </p>
-          <p className="hero__index">01 / 03</p>
-        </div>
-      </section>
+      </div>
+    </section>
   )
 }

@@ -1,0 +1,78 @@
+@font-face {
+  font-family: 'IM Fell English';
+  src: url('../../public/fonts/im-fell-english/IMFeENrm28P.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+/* Keep the first screen intact; the panorama's extra travel lives in continuation. */
+.site-shell.reading-shell { scroll-snap-type: none; }
+.site-shell.reading-shell > .reading-continuation {
+  height: var(--reading-continuation-height);
+  min-height: var(--reading-continuation-height);
+}
+.reading-shell .reading-garden-plane { position: absolute; inset: 0; }
+.reading-shell .reading-projects-slot { position: relative; }
+.garden-intro .garden-intro__stage { position: fixed; inset: 0; pointer-events: none; }
+.garden-intro .garden-intro__stamp {
+  position: absolute;
+  left: 9vw;
+  top: calc(35svh - 64px);
+  margin: 0;
+}
+.garden-intro .garden-intro__window {
+  position: absolute;
+  left: 9vw;
+  top: 35svh;
+  width: max-content;
+  max-width: calc(91vw - 24px);
+  height: 10.5em;
+  box-sizing: content-box;
+  padding-block: 1em 1.5em;
+  margin-block: -1em -1.5em;
+  overflow: hidden;
+  color: #e5e5da;
+  font-family: 'IM Fell English', Georgia, serif;
+  font-size: clamp(28px, 2.4vw, 38px);
+  font-weight: 400;
+  line-height: 1.5;
+  pointer-events: none;
+  /* Soft shoulders continue beyond the original reading area; the text stays put. */
+  mask-image: linear-gradient(to bottom,
+    transparent, rgb(0 0 0 / 0.156) 5.375%, rgb(0 0 0 / 0.5) 10.75%,
+    rgb(0 0 0 / 0.844) 16.125%, #000 21.5%, #000 71%,
+    rgb(0 0 0 / 0.844) 78.25%, rgb(0 0 0 / 0.5) 85.5%,
+    rgb(0 0 0 / 0.156) 92.75%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom,
+    transparent, rgb(0 0 0 / 0.156) 5.375%, rgb(0 0 0 / 0.5) 10.75%,
+    rgb(0 0 0 / 0.844) 16.125%, #000 21.5%, #000 71%,
+    rgb(0 0 0 / 0.844) 78.25%, rgb(0 0 0 / 0.5) 85.5%,
+    rgb(0 0 0 / 0.156) 92.75%, transparent);
+}
+.garden-intro .garden-intro__paragraph { margin: 0 0 1.5em; font: inherit; letter-spacing: 0; }
+.garden-intro .garden-intro__paragraph:last-child { margin-bottom: 0; }
+.garden-intro .garden-intro__line { display: block; width: max-content; white-space: nowrap; }
+
+@media (max-width: 800px) {
+  .garden-intro .garden-intro__stamp { left: 24px; top: calc(30svh - 64px); }
+  .garden-intro .garden-intro__window {
+    left: 24px;
+    top: 30svh;
+    width: calc(100% - 48px);
+    max-width: 520px;
+    /* The longest approved line measures just under 17em in IM Fell English. */
+    font-size: min(clamp(24px, 6.6vw, 28px), calc((100vw - 48px) / 17.1));
+  }
+}
+@media (max-height: 600px) {
+  .garden-intro .garden-intro__window {
+    top: 28svh;
+    height: 10.5em;
+    max-height: 65svh;
+    font-size: min(clamp(18px, 3.8svh, 28px), calc((100vw - 48px) / 17.1));
+    line-height: 1.35;
+  }
+  .garden-intro .garden-intro__stamp { top: calc(28svh - 50px); }
+  .garden-intro .garden-intro__paragraph { margin-bottom: 0.8em; }
+}

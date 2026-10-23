@@ -7,20 +7,23 @@ vi.mock('./DigitalGardenScene', () => ({
 }))
 
 describe('DigitalGardenHero', () => {
-  it('presents Yulia identity and the first-screen controls', () => {
+  it('presents the approved introduction and preserves the original stamp', () => {
     render(<DigitalGardenHero />)
 
-    expect(screen.getByRole('heading', { name: 'Hi, I’m Yulia Xu' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'I’m Yulia Xu, a UI/UX designer with 3 years working experience.' })).toBeInTheDocument()
     expect(screen.getByText('DESIGN PORTFOLIO · YULIA · 2026')).toBeInTheDocument()
-    expect(screen.getByText('UI/UX Designer')).toBeInTheDocument()
-    expect(screen.getByText(/scroll to explore/i)).toBeInTheDocument()
+    expect(screen.getByText('my daily design workflow.')).toBeInTheDocument()
+    expect(screen.getByText('My work spans toB and toC products.')).toBeInTheDocument()
+    expect(screen.getByText('Here are 4 selected projects,')).toBeInTheDocument()
+    expect(screen.getByText('a closer look at how I design.')).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Yulia portfolio introduction' })).toHaveClass('snap-section')
   })
 
   it('renders Chinese copy when the language prop changes', () => {
     render(<DigitalGardenHero language="zh" />)
 
-    expect(screen.getByText('UI/UX 设计师')).toBeInTheDocument()
-    expect(screen.getByText('向下探索')).toBeInTheDocument()
+    expect(screen.getByText('一名 UI/UX 设计师，')).toBeInTheDocument()
+    expect(screen.getByText('日常设计工作流。')).toBeInTheDocument()
   })
 
   it('does not render the about section yet', () => {

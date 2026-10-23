@@ -1,6 +1,7 @@
 import * as THREE from 'three'
-import gardenTextureUrl from '../assets/digital-garden-hero.png'
+import gardenTextureUrl from '../assets/digital-garden-panorama.png'
 import { calculatePointerVelocity, normalizePointer } from './interaction'
+import type { BackgroundCrop } from './backgroundFrame'
 import { fragmentShader, vertexShader } from './shaders'
 
 export type GardenSceneController = {
@@ -8,9 +9,12 @@ export type GardenSceneController = {
   resize: () => void
   setPointer: (clientX: number, clientY: number, active?: boolean) => void
   setReducedMotion: (reduced: boolean) => void
+  setFraming: (crop: BackgroundCrop) => void
 }
 
 export function createGardenScene(container: HTMLElement): GardenSceneController {
+  container.dataset.webglReady = 'false'
+  delete container.dataset.webglFailed
   const isCoarsePointer = window.matchMedia?.('(pointer: coarse)').matches ?? false
   const renderer = new THREE.WebGLRenderer({
     alpha: false,
@@ -24,12 +28,14 @@ export function createGardenScene(container: HTMLElement): GardenSceneController
 
   const scene = new THREE.Scene()
   const camera = new THREE.Camera()
+  let destroyed = false
   const texture = new THREE.TextureLoader().load(gardenTextureUrl, (loaded) => {
+    if (destroyed) { loaded.dispose(); return }
     loaded.colorSpace = THREE.SRGBColorSpace
-    uniforms.uImageResolution.value.set(
-      loaded.image.naturalWidth || loaded.image.width,
-      loaded.image.naturalHeight || loaded.image.height,
-    )
+    container.dataset.webglReady = 'true'
+    renderFrame()
+  }, undefined, () => {
+    if (!destroyed) { container.dataset.webglFailed = 'true'; container.dataset.webglReady = 'false' }
   })
   texture.colorSpace = THREE.SRGBColorSpace
   texture.minFilter = THREE.LinearFilter
@@ -38,7 +44,7 @@ export function createGardenScene(container: HTMLElement): GardenSceneController
   const uniforms = {
     uTexture: { value: texture },
     uResolution: { value: new THREE.Vector2(1, 1) },
-    uImageResolution: { value: new THREE.Vector2(2048, 1152) },
+    uCrop: { value: new THREE.Vector4(0, 0, 1, 1) },
     uPointer: { value: new THREE.Vector2(0.72, 0.45) },
     uPointerTarget: { value: new THREE.Vector2(0.72, 0.45) },
     uTime: { value: 0 },
@@ -58,7 +64,6 @@ export function createGardenScene(container: HTMLElement): GardenSceneController
   scene.add(mesh)
 
   let frame = 0
-  let destroyed = false
   let pointerActive = false
   let reducedMotion = false
   const startedAt = performance.now()
@@ -147,6 +152,11 @@ export function createGardenScene(container: HTMLElement): GardenSceneController
     }
   }
 
+  const setFraming = (crop: BackgroundCrop) => {
+    uniforms.uCrop.value.set(crop.x, crop.y, crop.width, crop.height)
+    if (reducedMotion && !document.hidden) renderStaticFrame()
+  }
+
   const handleVisibility = () => {
     if (document.hidden) {
       cancelAnimationFrame(frame)
@@ -174,5 +184,5 @@ export function createGardenScene(container: HTMLElement): GardenSceneController
   renderFrame()
   startLoop()
 
-  return { destroy, resize, setPointer, setReducedMotion }
+  return { destroy, resize, setPointer, setReducedMotion, setFraming }
 }

@@ -16,5 +16,5 @@ it('renders all 16 case-study pages in order with their original aspect ratios',
     expect(image).toHaveAccessibleName(`灵机项目详情，第 ${index + 1} 页，共 16 页`)
   })
   expect(images[0]).toHaveAttribute('fetchpriority', 'high')
-  expect(screen.getByRole('link', { name: '返回作品' })).toHaveAttribute('href', '/Myweb/#projects')
+  expect(screen.getByRole('link', { name: '返回' })).toHaveAttribute('href', '/Myweb/#project-01')
 })

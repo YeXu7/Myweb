@@ -1,3 +1,4 @@
+import { StrictMode } from 'react'
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PaperProjectGallery } from './PaperProjectGallery'
@@ -31,6 +32,7 @@ beforeEach(() => {
   vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (this: HTMLElement) { return this.id === 'projects' ? 3240 : 76 })
 })
 afterEach(() => {
+  window.history.replaceState(null, '', '/'); sessionStorage.clear()
   vi.restoreAllMocks(); vi.unstubAllGlobals()
   Object.defineProperty(document, 'elementFromPoint', { configurable: true, value: originalElementFromPoint })
 })
@@ -684,4 +686,104 @@ it('offers project 1 details and cycles keyboard focus between View and Return',
   fireEvent.keyDown(container.querySelectorAll('[data-paper]')[1], { key: 'Enter' }); tick(90)
   expect(screen.queryByRole('link', { name: '查看' })).not.toBeInTheDocument()
   expect(screen.getByRole('button', { name: '查看' })).toBeDisabled()
+})
+
+it('restores an expanded repeated cover and its queue position without playing the opening again', () => {
+  const first = setup(); tick(2)
+  const shell = first.container.querySelector<HTMLElement>('.site-shell')!
+  shell.scrollTop = 2520; fireEvent.scroll(shell); tick(80)
+  fireEvent.wheel(shell, { deltaY: 400 }); tick(80)
+  const phaseBefore = first.container.querySelector('#projects')!.getAttribute('data-phase')
+  scene.hitTest.mockReturnValue(4)
+  fireEvent.click(first.container.querySelector('.paper-gallery__stage')!, { clientX: 640, clientY: 360 }); tick(90)
+  const view = screen.getByRole('link', { name: '查看' })
+  view.addEventListener('click', event => event.preventDefault())
+  fireEvent.click(view)
+  expect(window.location.hash).toBe('#project-01')
+  first.unmount()
+  const restored = setup()
+  expect(screen.getByRole('dialog')).toHaveAccessibleName('灵机')
+  expect(restored.container.querySelector<HTMLElement>('.site-shell')!.scrollTop).toBe(2520)
+  const focus = (scene.paint.mock.calls.at(-1) as unknown as unknown[])[5] as { index: number; progress: number }
+  expect(focus.index).toBe(4)
+  expect(focus.progress).toBe(1)
+  expect(restored.container.querySelector('#projects')).toHaveAttribute('data-phase', phaseBefore)
+  fireEvent.click(screen.getByRole('button', { name: '返回' })); tick(90)
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  expect(restored.container.querySelector('#projects')).toHaveAttribute('data-phase', phaseBefore)
+  expect(restored.container.querySelector<HTMLElement>('.site-shell')!.style.scrollBehavior).toBe('')
+  restored.unmount()
+  window.history.replaceState(null, '', '/')
+  sessionStorage.clear()
+})
+
+it('opens project 1 immediately when returning from a direct detail link without saved state', () => {
+  sessionStorage.clear(); window.history.replaceState(null, '', '/Myweb/#project-01')
+  const view = setup()
+  expect(screen.getByRole('dialog')).toHaveAccessibleName('灵机')
+  const focus = (scene.paint.mock.calls.at(-1) as unknown as unknown[])[5] as { progress: number }
+  expect(focus.progress).toBe(1)
+  view.unmount(); window.history.replaceState(null, '', '/')
+})
+
+it('shows action focus emphasis for Tab but not when a mouse opens the cover', () => {
+  const { container } = setup(); tick(2)
+  const stage = container.querySelector('.paper-gallery__stage')!
+  fireEvent.pointerDown(stage, { button: 0, pointerType: 'mouse' })
+  scene.hitTest.mockReturnValue(0)
+  fireEvent.click(stage, { clientX: 640, clientY: 360 }); tick(90)
+  expect(container.querySelector('#projects')).toHaveAttribute('data-action-keyboard', 'false')
+  fireEvent.keyDown(window, { key: 'Tab' })
+  expect(container.querySelector('#projects')).toHaveAttribute('data-action-keyboard', 'true')
+  fireEvent.pointerDown(screen.getByRole('button', { name: '返回' }), { button: 0 })
+  expect(container.querySelector('#projects')).toHaveAttribute('data-action-keyboard', 'false')
+})
+
+
+it('restores a direct return in StrictMode and reduced motion, then releases isolation on close', () => {
+  reduced = true
+  window.history.replaceState(null, '', '/Myweb/#project-01')
+  const view = render(<StrictMode><div className="site-shell"><PaperProjectGallery /></div></StrictMode>)
+  expect(screen.getByRole('dialog')).toHaveAccessibleName('灵机')
+  const shell = view.container.querySelector<HTMLElement>('.site-shell')!
+  expect(shell.style.overflow).toBe('hidden')
+  fireEvent.click(screen.getByRole('button', { name: '返回' })); tick(2)
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  expect(shell.style.overflow).toBe('')
+  expect(screen.getAllByRole('img')).toHaveLength(4)
+  expect(window.location.hash).toBe('#projects')
+})
+
+it('returns to the same static-list position after a reduced-motion detail visit', () => {
+  reduced = true
+  const first = setup(); tick(2)
+  const shell = first.container.querySelector<HTMLElement>('.site-shell')!
+  shell.scrollTop = 400; fireEvent.scroll(shell); tick(2)
+  fireEvent.keyDown(first.container.querySelector('[data-paper]')!, { key: 'Enter' }); tick(2)
+  const view = screen.getByRole('link', { name: '查看' })
+  view.addEventListener('click', event => event.preventDefault()); fireEvent.click(view)
+  first.unmount()
+  const restored = setup()
+  expect(restored.container.querySelector<HTMLElement>('.site-shell')!.scrollTop).toBe(400)
+  fireEvent.click(screen.getByRole('button', { name: '返回' })); tick(2)
+  expect(restored.container.querySelector<HTMLElement>('.site-shell')!.scrollTop).toBe(400)
+})
+
+it('retains the pre-entry scroll position when opening a cover as the gallery appears', () => {
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+    const shell = this.closest<HTMLElement>('.site-shell')
+    return new DOMRect(0, this.id === 'projects' ? 1000 - (shell?.scrollTop ?? 0) : 0, 1280, 720)
+  })
+  const first = setup(); tick(2)
+  const shell = first.container.querySelector<HTMLElement>('.site-shell')!
+  shell.scrollTop = 950; fireEvent.scroll(shell); tick(80)
+  scene.hitTest.mockReturnValue(0)
+  fireEvent.click(first.container.querySelector('.paper-gallery__stage')!, { clientX: 640, clientY: 360 }); tick(90)
+  const view = screen.getByRole('link', { name: '查看' })
+  view.addEventListener('click', event => event.preventDefault()); fireEvent.click(view)
+  first.unmount()
+  const restored = setup()
+  expect(restored.container.querySelector<HTMLElement>('.site-shell')!.scrollTop).toBe(950)
+  fireEvent.click(screen.getByRole('button', { name: '返回' })); tick(90)
+  expect(restored.container.querySelector<HTMLElement>('.site-shell')!.scrollTop).toBe(950)
 })

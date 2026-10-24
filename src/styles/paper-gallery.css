@@ -110,7 +110,11 @@
 .paper-gallery__actions .paper-gallery__view { background: #050505; color: #fff; }
 .paper-gallery__actions .paper-gallery__view .paper-gallery__button-outline { color: #dbd8ce; }
 .paper-gallery__actions button:disabled { cursor: not-allowed; }
-.paper-gallery__actions :is(button, a):focus-visible { outline: 2px solid #f4f1e7; outline-offset: 5px; }
+.paper-gallery__actions :is(button, a):focus { outline: none; }
+.paper-gallery[data-action-keyboard='true'] .paper-gallery__actions :is(button, a):focus .paper-gallery__button-outline {
+  stroke-width: 1.8; color: #fff;
+}
+.paper-gallery[data-action-keyboard='true'] .paper-gallery__actions :is(button, a):focus .paper-gallery__button-outline path + path { opacity: 1; }
 @media (hover: hover) and (pointer: fine) {
   .paper-gallery__actions :is(button:not(:disabled), a):hover .paper-gallery__button-outline { transform: scale(1.025) rotate(-.25deg); }
 }

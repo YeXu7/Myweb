@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { projects } from '../garden/projects'
 import { clamp01, paperWidth, advancePaperPhase, advancePaperFlex } from '../garden/paperGalleryMotion'
 import { advancePaperScale, paperRenderOrder } from '../garden/paperGalleryInteraction'
@@ -8,6 +8,7 @@ import { createPaperSurfaceTracker } from '../garden/paperGallerySurface'
 import { paperPool, paperCardIndex, projectIdentity, resolvePaperEntry, loopGalleryPhase, wheelPixels, applyGalleryDelta } from '../garden/paperGalleryLoop'
 import { galleryEditorialMotion } from '../garden/galleryEditorial'
 import { galleryProgress } from '../garden/galleryProgress'
+import { galleryReturnHash, readGalleryReturn, saveGalleryReturn, clearGalleryReturn } from '../garden/galleryReturn'
 import '../styles/paper-gallery.css'
 
 function PaperButtonOutline() {
@@ -26,11 +27,12 @@ export function PaperProjectGallery() {
   const [centralProject, setCentralProject] = useState(0)
   const [reducedMode, setReducedMode] = useState(false)
   const [focusIndex, setFocusIndex] = useState<number | null>(null)
+  const saveReturnRef = useRef<() => void>(() => {})
   const closeRef = useRef<() => void>(() => {})
   useEffect(() => {
     if (focusIndex !== null) sectionRef.current?.querySelector<HTMLButtonElement>('[data-return]')?.focus({ preventScroll: true })
   }, [focusIndex])
-  useEffect(() => {
+  useLayoutEffect(() => {
     const section = sectionRef.current!
     const shell = section.closest<HTMLElement>('.site-shell')!
     const host = canvasRef.current!
@@ -110,9 +112,17 @@ export function PaperProjectGallery() {
         })
       }
     }
+    saveReturnRef.current = () => {
+      if (!focus || projectIdentity(focus.index) !== 0) return
+      saveGalleryReturn({ reduced: !!motion?.matches, index: focus.index, scrollProgress: focus.scrollProgress, loopProgress: focus.loopProgress, flexVelocity: focus.flexVelocity, snapshot: focus.snapshot })
+    }
     const finishReturn = () => {
       if (!focus) return
       const returning = focus
+      if (window.location.hash === galleryReturnHash) {
+        window.history.replaceState(window.history.state, '', '#projects')
+        clearGalleryReturn()
+      }
       displayedPhase = returning.snapshot.phase; scales = [...returning.snapshot.scales]; emphasis = returning.snapshot.emphasis!
       flex = { bend: returning.snapshot.flutter, velocity: returning.flexVelocity }; idleTime = returning.snapshot.idleTime
       section.dataset.focus = 'false'
@@ -126,15 +136,15 @@ export function PaperProjectGallery() {
       returnTarget.focus({ preventScroll: true })
       schedule()
     }
-    const openFocus = (index: number, trigger = cards[index]) => {
+    const openFocus = (index: number, trigger = cards[index], immediate = false) => {
       if (focus) return
       finishDrag()
       focus = {
-        index, progress: motion?.matches ? 1 : 0, opening: true, scrollTop: shell.scrollTop, trigger, flexVelocity: flex.velocity, scrollProgress: (shell.scrollTop - start) / travel, chapterHeight: section.offsetHeight, originalMinHeight: section.style.minHeight, loopProgress: overflow / travel,
+        index, progress: immediate || motion?.matches ? 1 : 0, opening: true, scrollTop: shell.scrollTop, trigger, flexVelocity: flex.velocity, scrollProgress: (shell.scrollTop - start) / travel, chapterHeight: section.offsetHeight, originalMinHeight: section.style.minHeight, loopProgress: overflow / travel,
         snapshot: { phase: displayedPhase ?? loopGalleryPhase((shell.scrollTop - start + overflow) / travel), scales: [...scales], flutter: flex.bend, idleTime, emphasis: { dimming: [...emphasis.dimming], spacing: [...emphasis.spacing], clarity: [...emphasis.clarity] } },
       }
       isolate(); section.dataset.focus = 'true'; setFocusIndex(projectIdentity(index))
-      dialog.style.opacity = motion?.matches ? '1' : '0'
+      dialog.style.opacity = immediate || motion?.matches ? '1' : '0'
       dialog.style.top = `${focusLayout(width, height, projectAspects[projectIdentity(index)]).controlsTop}px`
       sheets.forEach(sheet => { sheet.style.width = `${paperWidth(width, height)}px` })
       publishCaption(projectIdentity(index), false); schedule()
@@ -288,6 +298,7 @@ export function PaperProjectGallery() {
     }
     const pointerLeave = () => { pointer = null; hovered = null; schedule() }
     const pointerDown = (event: PointerEvent) => {
+      section.dataset.actionKeyboard = 'false'
       if (focus) return
       keyboard = false; focused = null; suppressClick = false; schedule()
       if (motion?.matches || event.button !== 0 || (event.pointerType && event.pointerType !== 'mouse') || !isVisible()) return
@@ -314,6 +325,7 @@ export function PaperProjectGallery() {
       if (index !== null) openFocus(index)
     }
     const keyDown = (event: KeyboardEvent) => {
+      if (['Tab', 'Enter', ' '].includes(event.key)) section.dataset.actionKeyboard = 'true'
       if (focus) {
         if (event.key === 'Escape') { event.preventDefault(); closeFocus() }
         if (event.key === 'Tab') {
@@ -424,6 +436,28 @@ export function PaperProjectGallery() {
     stage.addEventListener('lostpointercapture', pointerEnd); stage.addEventListener('dragstart', preventNativeDrag)
     shell.addEventListener('wheel', wheel, { passive: false })
     configure()
+    if (window.location.hash === galleryReturnHash) {
+      const stored = readGalleryReturn()
+      // A static list and the animated queue have different geometry and occurrence pools.
+      const saved = stored?.reduced === !!motion?.matches ? stored : null
+      const nativeProgress = saved?.scrollProgress ?? (motion?.matches ? 0 : .18)
+      const index = motion?.matches ? 0 : (saved?.index ?? 0)
+      overflow = motion?.matches ? 0 : (saved?.loopProgress ?? 0) * travel
+      writeScroll(start + nativeProgress * travel)
+      previousScroll = shell.scrollTop + overflow
+      displayedPhase = saved?.snapshot.phase ?? loopGalleryPhase(nativeProgress)
+      if (saved) {
+        scales = [...saved.snapshot.scales]; emphasis = saved.snapshot.emphasis!
+        idleTime = saved.snapshot.idleTime; flex = { bend: saved.snapshot.flutter, velocity: saved.flexVelocity }
+      }
+      section.dataset.actionKeyboard = 'false'
+      shell.style.setProperty('--page-progress', '2')
+      shell.style.setProperty('--first-screen-progress', '1')
+      openFocus(index, cards[index], true)
+      // Restore the DOM fallback synchronously; WebGL can replace it once textures are ready.
+      cancelAnimationFrame(frame); frame = 0; paint(0)
+      shell.dispatchEvent(new Event('scroll'))
+    }
     shell.addEventListener('scroll', scroll, { passive: true }); window.addEventListener('resize', measure)
     motion?.addEventListener('change', configure); hoverMedia?.addEventListener('change', clearInteraction)
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure)
@@ -438,7 +472,7 @@ export function PaperProjectGallery() {
     return () => {
       disposed = true; finishDrag(); cancelAnimationFrame(frame); observer?.disconnect(); intersection?.disconnect(); scene?.destroy(); fallback.destroy()
       section.dataset.focus = 'false'; restoreIsolation?.()
-      closeRef.current = () => {}
+      closeRef.current = () => {}; saveReturnRef.current = () => {}
       shell.removeEventListener('scroll', scroll); window.removeEventListener('resize', measure)
       window.removeEventListener('keydown', keyDown); window.removeEventListener('blur', windowBlur)
       window.removeEventListener('pointermove', dragMove); window.removeEventListener('pointerup', pointerEnd); window.removeEventListener('pointercancel', pointerEnd)
@@ -492,7 +526,12 @@ export function PaperProjectGallery() {
           <div className="paper-gallery__actions">
             <button type="button" data-return onClick={() => closeRef.current()}><PaperButtonOutline /><span>返回</span></button>
             {focusIndex === 0 ? (
-              <a className="paper-gallery__view" href={`${import.meta.env.BASE_URL}projects/lingji/`}><PaperButtonOutline /><span>查看</span></a>
+              <a className="paper-gallery__view" href={`${import.meta.env.BASE_URL}projects/lingji/`} onClick={event => {
+                saveReturnRef.current()
+                if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
+                  window.history.replaceState(window.history.state, '', galleryReturnHash)
+                }
+              }}><PaperButtonOutline /><span>查看</span></a>
             ) : (
               <button type="button" className="paper-gallery__view" disabled aria-describedby="paper-focus-unavailable"><PaperButtonOutline /><span>查看</span></button>
             )}

@@ -6,6 +6,11 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   base: '/Myweb/',
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      input: { main: 'index.html', lingji: 'projects/lingji/index.html' },
+    },
+  },
   test: {
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',

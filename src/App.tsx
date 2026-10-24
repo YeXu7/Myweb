@@ -36,6 +36,8 @@ export default function App() {
       syncScrollState()
     }
     measure()
+    // The fragment target is created by React, after the initial HTML is parsed.
+    if (window.location.hash === '#projects') shell.scrollTop = projectStart
     shell.addEventListener('scroll', syncScrollState, { passive: true })
     window.addEventListener('resize', measure)
 

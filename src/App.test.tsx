@@ -79,3 +79,17 @@ it('updates scroll styles without re-rendering the scene until the active naviga
   } finally { view.unmount(); vi.restoreAllMocks(); vi.unstubAllGlobals() }
   expect(pending.size).toBe(0)
 })
+
+it('lands on the gallery when returning from a detail page with the projects fragment', () => {
+  window.history.replaceState(null, '', '/Myweb/#projects')
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+    return { top: this.id === 'projects' ? 2150 : 0 } as DOMRect
+  })
+  try {
+    render(<App />)
+    expect(screen.getByLabelText('Portfolio snap pages').scrollTop).toBe(2150)
+  } finally {
+    window.history.replaceState(null, '', '/')
+    vi.restoreAllMocks()
+  }
+})

@@ -316,7 +316,13 @@ export function PaperProjectGallery() {
     const keyDown = (event: KeyboardEvent) => {
       if (focus) {
         if (event.key === 'Escape') { event.preventDefault(); closeFocus() }
-        if (event.key === 'Tab') { event.preventDefault(); returnButton.focus({ preventScroll: true }) }
+        if (event.key === 'Tab') {
+          event.preventDefault()
+          const actions = Array.from(dialog.querySelectorAll<HTMLElement>('button:not(:disabled), a[href]'))
+          const current = actions.indexOf(document.activeElement as HTMLElement)
+          const next = current < 0 ? 0 : (current + (event.shiftKey ? -1 : 1) + actions.length) % actions.length
+          actions[next]?.focus({ preventScroll: true })
+        }
         return
       }
       if (event.key === 'Tab') keyboard = true
@@ -485,7 +491,11 @@ export function PaperProjectGallery() {
           <h2 id="paper-focus-title">{projects[focusIndex ?? 0].title}</h2>
           <div className="paper-gallery__actions">
             <button type="button" data-return onClick={() => closeRef.current()}><PaperButtonOutline /><span>返回</span></button>
-            <button type="button" className="paper-gallery__view" disabled aria-describedby="paper-focus-unavailable"><PaperButtonOutline /><span>查看</span></button>
+            {focusIndex === 0 ? (
+              <a className="paper-gallery__view" href={`${import.meta.env.BASE_URL}projects/lingji/`}><PaperButtonOutline /><span>查看</span></a>
+            ) : (
+              <button type="button" className="paper-gallery__view" disabled aria-describedby="paper-focus-unavailable"><PaperButtonOutline /><span>查看</span></button>
+            )}
           </div>
           <span id="paper-focus-unavailable" hidden>项目详情暂未开放</span>
         </div>

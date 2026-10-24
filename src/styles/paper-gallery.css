@@ -93,13 +93,14 @@
   font-size: clamp(20px, 1.7vw, 26px); line-height: 1.2; font-weight: 400;
 }
 .paper-gallery__actions { display: flex; justify-content: center; gap: 16px; }
-.paper-gallery__actions button {
+.paper-gallery__actions :is(button, a) {
   position: relative; min-width: 134px; min-height: 48px; padding: 10px 29px;
   border: 0; border-radius: 999px; background: transparent;
   color: #f4f1e7; font-family: 'IM Fell English', 'Paper Handwriting', 'Songti SC', serif;
   font-size: 19px; font-weight: 400; line-height: 1.25; cursor: pointer;
 }
-.paper-gallery__actions button > span { position: relative; }
+.paper-gallery__actions a { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+.paper-gallery__actions :is(button, a) > span { position: relative; }
 .paper-gallery__button-outline {
   position: absolute; inset: -2px; width: calc(100% + 4px); height: calc(100% + 4px);
   overflow: visible; fill: none; stroke: currentColor; stroke-width: .85;
@@ -109,9 +110,9 @@
 .paper-gallery__actions .paper-gallery__view { background: #050505; color: #fff; }
 .paper-gallery__actions .paper-gallery__view .paper-gallery__button-outline { color: #dbd8ce; }
 .paper-gallery__actions button:disabled { cursor: not-allowed; }
-.paper-gallery__actions button:focus-visible { outline: 2px solid #f4f1e7; outline-offset: 5px; }
+.paper-gallery__actions :is(button, a):focus-visible { outline: 2px solid #f4f1e7; outline-offset: 5px; }
 @media (hover: hover) and (pointer: fine) {
-  .paper-gallery__actions button:not(:disabled):hover .paper-gallery__button-outline { transform: scale(1.025) rotate(-.25deg); }
+  .paper-gallery__actions :is(button:not(:disabled), a):hover .paper-gallery__button-outline { transform: scale(1.025) rotate(-.25deg); }
 }
 @media (prefers-reduced-motion: reduce) {
   .paper-gallery__button-outline { transition: none; }

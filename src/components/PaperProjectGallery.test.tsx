@@ -408,14 +408,14 @@ it('offers two original double-line capsule controls without a visible unavailab
   scene.hitTest.mockReturnValue(0)
   fireEvent.click(container.querySelector('.paper-gallery__stage')!, { clientX: 640, clientY: 360 }); tick(4)
   const dialog = screen.getByRole('dialog')
-  expect(dialog.querySelectorAll('button svg')).toHaveLength(2)
-  for (const svg of dialog.querySelectorAll('button svg')) {
+  expect(dialog.querySelectorAll('.paper-gallery__actions svg')).toHaveLength(2)
+  for (const svg of dialog.querySelectorAll('.paper-gallery__actions svg')) {
     expect(svg.querySelectorAll('path')).toHaveLength(2)
     expect(svg).toHaveAttribute('aria-hidden', 'true')
   }
   expect(screen.getByText('项目详情暂未开放')).not.toBeVisible()
-  expect(screen.getByRole('button', { name: '查看' })).toBeDisabled()
-  expect(screen.getByRole('button', { name: '查看' })).toHaveAccessibleDescription('项目详情暂未开放')
+  expect(screen.getByRole('link', { name: '查看' })).toHaveAttribute('href', '/Myweb/projects/lingji/')
+  expect(screen.getByRole('link', { name: '查看' })).not.toHaveAttribute('aria-describedby')
 })
 
 
@@ -665,4 +665,23 @@ it('removes the requested editorial copy and continuously scrubs progress within
   fireEvent.wheel(shell, { deltaY: -30 }); tick(100)
   expect(value()).toBeGreaterThan(.95)
   expect(progress).toHaveAccessibleName('Project 4 of 4')
+})
+
+it('offers project 1 details and cycles keyboard focus between View and Return', () => {
+  const { container } = setup(); tick(2)
+  fireEvent.keyDown(container.querySelector('[data-paper]')!, { key: 'Enter' }); tick(90)
+  const view = screen.getByRole('link', { name: '查看' })
+  const back = screen.getByRole('button', { name: '返回' })
+  expect(view).toHaveAttribute('href', '/Myweb/projects/lingji/')
+  expect(document.activeElement).toBe(back)
+  fireEvent.keyDown(window, { key: 'Tab' })
+  expect(document.activeElement).toBe(view)
+  fireEvent.keyDown(window, { key: 'Tab' })
+  expect(document.activeElement).toBe(back)
+  fireEvent.keyDown(window, { key: 'Tab', shiftKey: true })
+  expect(document.activeElement).toBe(view)
+  fireEvent.keyDown(window, { key: 'Escape' }); tick(90)
+  fireEvent.keyDown(container.querySelectorAll('[data-paper]')[1], { key: 'Enter' }); tick(90)
+  expect(screen.queryByRole('link', { name: '查看' })).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: '查看' })).toBeDisabled()
 })

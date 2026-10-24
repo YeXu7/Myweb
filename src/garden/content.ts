@@ -1,7 +1,7 @@
 export const heroContent = {
   en: {
-    intro: ['I’m Yulia Xu,', 'a UI/UX designer', 'with 3 years working experience.'],
-    practice: ['I design intuitive tools', 'in the film and video industry,', 'with AI tools into', 'my daily design workflow.'],
+    intro: ['I’m Yulia Xu,', 'a UI/UX designer', 'with 3 years of experience.'],
+    practice: ['Previously, I designed intuitive tools', 'for the film and video industry.'],
     eyebrow: 'DESIGN PORTFOLIO · YULIA · 2026',
     greeting: "Hi, I’m",
     name: 'Yulia Xu',
@@ -23,13 +23,12 @@ export const heroContent = {
 
 export const heroContinuation = [
   [
-    'My work spans toB and toC products.',
-    'Beyond the interface,',
-    'I explore motion, creative coding, and AI',
-    '— building prototypes to see',
-    'how an idea moves, and works.',
+    'My work spans B2B and B2C products.',
+    'Beyond interfaces,',
+    'I bring motion design and AI',
+    'into my daily workflow.',
   ],
-  ['Here are 4 selected projects,', 'a closer look at how I design.'],
+  ['Here are 4 selected projects', 'that show how I design.'],
 ] as const
 
 export const aboutContent = {

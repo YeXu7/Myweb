@@ -36,7 +36,7 @@ afterEach(() => {
 })
 
 describe('paper hover gallery', () => {
-  it('renders a bounded two-cycle pool with four distinct project identities; captions are hidden by default', () => {
+  it('renders a bounded two-cycle pool with four distinct project identities; all four names are readable before hover', () => {
     const { container } = setup(); tick(2)
     expect(container.querySelectorAll('[data-sheet]')).toHaveLength(16)
     expect(container.querySelectorAll('[data-paper]')).toHaveLength(8)
@@ -44,35 +44,35 @@ describe('paper hover gallery', () => {
       expect(blank).toHaveAttribute('aria-hidden', 'true')
       expect(blank).not.toHaveAttribute('tabindex')
     }
-    expect(container.querySelector('.paper-gallery__caption')).toHaveAttribute('aria-hidden', 'true')
+    expect(container.querySelector('.paper-gallery__index')).toHaveAttribute('data-preview', 'false')
   })
   it('uses the visible curved project for hover and clears it on stage leave', () => {
     const { container } = setup(); tick(2)
     const stage = container.querySelector('.paper-gallery__stage')!
     scene.hitTest.mockReturnValue(1)
     fireEvent.pointerMove(stage, { clientX: 640, clientY: 360, pointerType: 'mouse' }); tick(70)
-    expect(container.querySelector('.paper-gallery__caption')).toHaveAttribute('aria-hidden', 'false')
-    expect(container.querySelector('.paper-gallery__caption h2')).toHaveTextContent('腾讯视频 OTT 端')
+    expect(container.querySelector('.paper-gallery__index')).toHaveAttribute('data-preview', 'true')
+    expect(container.querySelector('.paper-gallery__index-entry[data-active="true"] .paper-gallery__index-name')).toHaveTextContent('腾讯视频 OTT 端')
     expect(scene.paint.mock.calls.at(-1)?.[2]).toEqual([1, 1.5, 1, 1, 1, 1, 1, 1])
     fireEvent.pointerLeave(stage); tick(70)
-    expect(container.querySelector('.paper-gallery__caption')).toHaveAttribute('aria-hidden', 'true')
+    expect(container.querySelector('.paper-gallery__index')).toHaveAttribute('data-preview', 'false')
     expect(scene.paint.mock.calls.at(-1)?.[2]).toEqual(Array(8).fill(1))
   })
   it('supports keyboard focus and releases focus enlargement on blur', () => {
     const { container } = setup(); tick(2)
     const paper = container.querySelectorAll('[data-paper]')[0]
     fireEvent.focusIn(paper); tick(70)
-    expect(container.querySelector('.paper-gallery__caption h2')).toHaveTextContent('灵机')
-    expect(container.querySelector('.paper-gallery__caption')).toHaveAttribute('aria-hidden', 'false')
+    expect(container.querySelector('.paper-gallery__index-entry[data-active="true"] .paper-gallery__index-name')).toHaveTextContent('灵机')
+    expect(container.querySelector('.paper-gallery__index')).toHaveAttribute('data-preview', 'true')
     fireEvent.focusOut(paper); tick(70)
-    expect(container.querySelector('.paper-gallery__caption')).toHaveAttribute('aria-hidden', 'true')
+    expect(container.querySelector('.paper-gallery__index')).toHaveAttribute('data-preview', 'false')
   })
   it('lets a mouse hover take over from earlier keyboard focus', () => {
     const { container } = setup(); tick(2)
     fireEvent.focusIn(container.querySelector('[data-paper]')!); tick(3)
     scene.hitTest.mockReturnValue(2)
     fireEvent.pointerMove(container.querySelector('.paper-gallery__stage')!, { clientX: 640, clientY: 360 }); tick(70)
-    expect(container.querySelector('.paper-gallery__caption h2')).toHaveTextContent('如影')
+    expect(container.querySelector('.paper-gallery__index-entry[data-active="true"] .paper-gallery__index-name')).toHaveTextContent('如影')
     expect(scene.paint.mock.calls.at(-1)?.[2]).toEqual([1, 1, 1.5, 1, 1, 1, 1, 1])
   })
   it('re-evaluates the stationary pointer after scrolling, then clears on window blur', () => {
@@ -82,16 +82,16 @@ describe('paper hover gallery', () => {
     fireEvent.pointerMove(stage, { clientX: 640, clientY: 360 }); tick(3)
     scene.hitTest.mockReturnValue(null)
     fireEvent.scroll(container.querySelector('.site-shell')!); tick(70)
-    expect(container.querySelector('.paper-gallery__caption')).toHaveAttribute('aria-hidden', 'true')
+    expect(container.querySelector('.paper-gallery__index')).toHaveAttribute('data-preview', 'false')
     scene.hitTest.mockReturnValue(0)
     fireEvent.pointerMove(stage, { clientX: 640, clientY: 360 }); tick(3)
     fireEvent(window, new Event('blur')); tick(70)
-    expect(container.querySelector('.paper-gallery__caption')).toHaveAttribute('aria-hidden', 'true')
+    expect(container.querySelector('.paper-gallery__index')).toHaveAttribute('data-preview', 'false')
   })
   it('keeps project information available on touch and in reduced motion', () => {
     fine = false
     const touch = setup(); tick(2)
-    expect(touch.container.querySelector('.paper-gallery__caption')).toHaveAttribute('aria-hidden', 'false')
+    expect(touch.container.querySelector('.paper-gallery__index')).toHaveAttribute('data-preview', 'true')
     touch.unmount()
     reduced = true
     const staticView = setup(); tick(2)
@@ -110,11 +110,11 @@ describe('paper hover gallery', () => {
     const stage = container.querySelector('.paper-gallery__stage')!
     hit.mockReturnValue(container.querySelectorAll('[data-paper]')[2])
     fireEvent.pointerMove(stage, { clientX: 640, clientY: 360 }); tick(70)
-    expect(container.querySelector('.paper-gallery__caption h2')).toHaveTextContent('如影')
+    expect(container.querySelector('.paper-gallery__index-entry[data-active="true"] .paper-gallery__index-name')).toHaveTextContent('如影')
     expect(container.querySelectorAll<HTMLElement>('[data-paper]')[2].style.transform).toContain('scale(1.5)')
     hit.mockReturnValue(container.querySelector('[data-decoration]'))
     fireEvent.pointerMove(stage, { clientX: 700, clientY: 360 }); tick(70)
-    expect(container.querySelector('.paper-gallery__caption')).toHaveAttribute('aria-hidden', 'true')
+    expect(container.querySelector('.paper-gallery__index')).toHaveAttribute('data-preview', 'false')
     expect(container.querySelectorAll<HTMLElement>('[data-paper]')[2].style.transform).toContain('scale(1)')
     expect(scene.paint).not.toHaveBeenCalled()
   })
@@ -127,7 +127,7 @@ describe('paper hover gallery', () => {
     expect(event.defaultPrevented).toBe(true)
     expect(scene.destroy).toHaveBeenCalledTimes(1)
     expect(container.querySelector('#projects')).toHaveAttribute('data-canvas-ready', 'false')
-    expect(container.querySelector('.paper-gallery__caption')).toHaveAttribute('aria-hidden', 'true')
+    expect(container.querySelector('.paper-gallery__index')).toHaveAttribute('data-preview', 'false')
   })
   it('clears selection when pointer capability changes and removes media listeners', () => {
     const view = setup(); tick(2)
@@ -137,7 +137,7 @@ describe('paper hover gallery', () => {
     hover.matches = false
     act(() => hover.addEventListener.mock.calls[0][1]()); tick(70)
     expect(scene.paint.mock.calls.at(-1)?.[2]).toEqual(Array(8).fill(1))
-    expect(view.container.querySelector('.paper-gallery__caption')).toHaveAttribute('aria-hidden', 'false')
+    expect(view.container.querySelector('.paper-gallery__index')).toHaveAttribute('data-preview', 'true')
     view.unmount()
     for (const record of mediaRecords) {
       expect(record.removeEventListener).toHaveBeenCalledWith('change', record.addEventListener.mock.calls[0][1])
@@ -543,4 +543,126 @@ it('ends an active drag when the page hides, motion mode changes, or keyboard fo
     expect(view.container.querySelector('#projects')).toHaveAttribute('data-dragging', 'false')
     view.unmount(); hidden = false
   }
+})
+
+it('keeps all four project names visible without hover and retires the bottom caption', () => {
+  const { container, unmount } = setup(); tick(2)
+  const index = container.querySelector('.paper-gallery__index')!
+  expect(index).toHaveAttribute('aria-hidden', 'false')
+  expect(index.querySelectorAll('li')).toHaveLength(4)
+  for (const name of ['灵机', '腾讯视频 OTT 端', '如影', '即行']) expect(index).toHaveTextContent(name)
+  expect(container.querySelector('.paper-gallery__caption')).toBeNull()
+  expect(container.querySelector('.paper-gallery__annotation')).toBeNull()
+  expect(index.querySelector('[data-active="true"]')).toBeNull()
+  scene.hitTest.mockReturnValue(1)
+  const stage = container.querySelector('.paper-gallery__stage')!
+  fireEvent.pointerMove(stage, { clientX: 640, clientY: 360 }); tick(3)
+  expect(index.querySelector('[data-active="true"]')).toHaveTextContent('腾讯视频 OTT 端')
+  expect(index.querySelector('[data-active="true"]')).not.toHaveTextContent('Video Experience')
+  fireEvent.pointerLeave(stage); tick(3)
+  expect(index.querySelector('[data-active="true"]')).toBeNull()
+  expect(index.querySelectorAll('li')).toHaveLength(4)
+  unmount()
+})
+
+it('scrubs chapter lines with native scroll and reverses without replaying a timed entrance', () => {
+  const { container, unmount } = setup(); tick(2)
+  const shell = container.querySelector<HTMLElement>('.site-shell')!
+  const title = container.querySelector<HTMLElement>('[data-chapter-title]')!
+  const date = container.querySelector<HTMLElement>('[data-chapter-date]')!
+  const initial = title.style.transform
+  expect(initial).not.toBe('translate3d(0, 0.00%, 0)')
+  shell.scrollTop = 300; fireEvent.scroll(shell); tick(2)
+  expect(title.style.transform).toBe('translate3d(0, 0.00%, 0)')
+  expect(date.style.transform).toBe('translate3d(0, 0.00%, 0)')
+  shell.scrollTop = 0; fireEvent.scroll(shell); tick(2)
+  expect(title.style.transform).toBe(initial)
+  unmount()
+})
+
+it('does not click through the static index or start dragging a cover underneath it', () => {
+  const { container, unmount } = setup(); tick(2)
+  const entry = container.querySelector('.paper-gallery__index-name')!
+  scene.hitTest.mockReturnValue(1)
+  fireEvent.pointerMove(entry, { clientX: 1000, clientY: 200 }); tick(2)
+  expect(container.querySelector('.paper-gallery__index')).toHaveAttribute('data-preview', 'false')
+  fireEvent.pointerDown(entry, { clientX: 1000, clientY: 200, button: 0, buttons: 1 })
+  fireEvent.pointerMove(window, { clientX: 1000, clientY: 100, buttons: 1 }); tick(2)
+  fireEvent.click(entry, { clientX: 1000, clientY: 200 }); tick(2)
+  expect(container.querySelector('#projects')).not.toHaveAttribute('data-focus', 'true')
+  expect(container.querySelector('#projects')).not.toHaveAttribute('data-dragging', 'true')
+  unmount()
+})
+
+
+it('marks only the selected title with a dash and gives its neighboring rows room', () => {
+  const { container } = setup(); tick(2)
+  const stage = container.querySelector('.paper-gallery__stage')!
+  const rows = [...container.querySelectorAll('.paper-gallery__index-entry')]
+  expect(container.querySelector('.paper-gallery__index')).toHaveTextContent('TAKE A CLOSER LOOK')
+  expect(container.querySelectorAll('.paper-gallery__index-arrow, .paper-gallery__index-type')).toHaveLength(0)
+  expect(rows.map(row => row.querySelector('.paper-gallery__index-symbol')?.textContent)).toEqual(['', '', '', ''])
+  scene.hitTest.mockReturnValue(1)
+  fireEvent.pointerMove(stage, { clientX: 640, clientY: 360 }); tick(3)
+  expect(rows.map(row => row.querySelector('.paper-gallery__index-symbol')?.textContent)).toEqual(['', '-', '', ''])
+  expect(rows.map(row => row.getAttribute('data-position'))).toEqual(['before', 'selected', 'after', 'after'])
+  fireEvent.pointerLeave(stage); tick(3)
+  expect(rows.every(row => row.getAttribute('data-position') === 'rest')).toBe(true)
+})
+
+it('tracks central project progress through the loop independently of cover hover', () => {
+  const { container } = setup(); tick(2)
+  const shell = container.querySelector<HTMLElement>('.site-shell')!
+  const progress = container.querySelector('.paper-gallery__progress')!
+  expect(progress).toHaveAccessibleName('Project 1 of 4')
+  expect(container).not.toHaveTextContent('Scroll or drag to explore')
+  expect(container).not.toHaveTextContent('Scroll to explore')
+  shell.scrollTop = 2520; fireEvent.scroll(shell); tick(100)
+  expect(progress).toHaveAccessibleName('Project 4 of 4')
+  scene.hitTest.mockReturnValue(1)
+  fireEvent.pointerMove(container.querySelector('.paper-gallery__stage')!, { clientX: 640, clientY: 360 }); tick(3)
+  expect(progress).toHaveAccessibleName('Project 4 of 4')
+  expect(container.querySelector('.paper-gallery__index-entry[data-active="true"]')).toHaveTextContent('腾讯视频 OTT 端')
+  fireEvent.wheel(shell, { deltaY: 400 }); tick(100)
+  expect(progress).toHaveAccessibleName('Project 1 of 4')
+  expect(progress.querySelectorAll('[data-segment]')).toHaveLength(0)
+  expect(progress.querySelector('.paper-gallery__progress-fill')).toHaveStyle({ transform: 'scaleX(0.25000)' })
+})
+
+
+it('removes the requested editorial copy and continuously scrubs progress within one project', () => {
+  const { container } = setup(); tick(2)
+  const shell = container.querySelector<HTMLElement>('.site-shell')!
+  const progress = container.querySelector('.paper-gallery__progress')!
+  const fill = container.querySelector<HTMLElement>('.paper-gallery__progress-fill')!
+  const value = () => Number(fill.style.transform.match(/scaleX\(([^)]+)\)/)?.[1])
+  expect(container).not.toHaveTextContent('Thoughtful interfaces.')
+  expect(container).not.toHaveTextContent('Everyday experiences.')
+  expect(container).not.toHaveTextContent('PRODUCT · INTERACTION · MOTION')
+  expect(container).toHaveTextContent('Selected works')
+  expect(container).toHaveTextContent('from 2023-2026')
+  shell.scrollTop = 2520 * .26; fireEvent.scroll(shell); tick(100)
+  const early = value()
+  expect(progress).toHaveAccessibleName('Project 1 of 4')
+  shell.scrollTop = 2520 * .28; fireEvent.scroll(shell); tick(100)
+  const later = value()
+  expect(early).toBeCloseTo(.25 + .25 / 6, 4)
+  expect(later - early).toBeCloseTo(.25 / 6, 4)
+  expect(progress).toHaveAccessibleName('Project 1 of 4')
+  expect(later).toBeGreaterThan(early)
+  scene.hitTest.mockReturnValue(2)
+  fireEvent.pointerMove(container.querySelector('.paper-gallery__stage')!, { clientX: 640, clientY: 360 }); tick(3)
+  expect(value()).toBe(later)
+  shell.scrollTop = 2520 * .26; fireEvent.scroll(shell); tick(100)
+  expect(value()).toBe(early)
+  shell.scrollTop = 2520; fireEvent.scroll(shell); tick(100)
+  fireEvent.wheel(shell, { deltaY: 140 }); tick(100)
+  expect(value()).toBeGreaterThan(.95)
+  expect(progress).toHaveAccessibleName('Project 4 of 4')
+  fireEvent.wheel(shell, { deltaY: 30 }); tick(100)
+  expect(value()).toBe(.25)
+  expect(progress).toHaveAccessibleName('Project 1 of 4')
+  fireEvent.wheel(shell, { deltaY: -30 }); tick(100)
+  expect(value()).toBeGreaterThan(.95)
+  expect(progress).toHaveAccessibleName('Project 4 of 4')
 })

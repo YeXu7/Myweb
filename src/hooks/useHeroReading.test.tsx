@@ -1,24 +1,24 @@
 import { useRef } from 'react'
-import { act, render } from '@testing-library/react'
+import { act, fireEvent, render } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { useHeroReading } from './useHeroReading'
 
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals() })
 
-function ReadingFixture() {
+function ReadingFixture({ adjacent = false }: { adjacent?: boolean }) {
   const ref = useRef<HTMLElement>(null)
   useHeroReading(ref)
   return <main className="site-shell"><section ref={ref}><div className="garden-intro__stage">
     <div className="garden-intro__stamp"><span>Stamp</span></div>
     <div data-reading-window style={{ height: 400 }}><div data-reading-track>
       <span data-reading-line data-top="20">First line</span>
-      <div data-reading-continuation data-top="448"><span data-reading-line data-top="448">Second screen</span></div>
+      <div data-reading-continuation data-top="448"><span data-reading-line data-top="448">Second screen</span>{adjacent && <span data-reading-line data-top="508">Nearby line</span>}</div>
       <span data-reading-line data-top="900">Last line</span>
     </div></div>
   </div></section><section id="projects" /></main>
 }
 
-function setup() {
+function setup(adjacent = false) {
   const pending = new Map<number, FrameRequestCallback>(); let next = 0
   vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { pending.set(++next, callback); return next })
   vi.stubGlobal('cancelAnimationFrame', (id: number) => pending.delete(id))
@@ -27,9 +27,9 @@ function setup() {
   vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(800)
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
     const shell = this.closest<HTMLElement>('.site-shell')
-    return { top: this.id === 'projects' ? 2240 - (shell?.scrollTop ?? 0) : Number(this.dataset.top ?? 0), height: 40 } as DOMRect
+    return { top: this.id === 'projects' ? 2240 - (shell?.scrollTop ?? 0) : Number(this.dataset.top ?? 0), height: 40, left: 80, width: 400, right: 480, bottom: Number(this.dataset.top ?? 0) + 40 } as DOMRect
   })
-  const view = render(<ReadingFixture />)
+  const view = render(<ReadingFixture adjacent={adjacent} />)
   const shell = view.container.querySelector<HTMLElement>('.site-shell')!
   const track = view.container.querySelector<HTMLElement>('[data-reading-track]')!
   const flush = () => act(() => { const work = [...pending.values()]; pending.clear(); work.forEach(callback => callback(16)) })
@@ -86,4 +86,93 @@ it('does not rewrite identical text filters or SVG parameters and resumes at nat
     for (const line of view.container.querySelectorAll<HTMLElement>('[data-reading-line]')) expect(line.style.filter).toBe('none')
   } finally { view.unmount() }
   expect(pending.size).toBe(0)
+})
+
+
+it('softens a medium pointer neighborhood across nearby lines and holds still without frame polling', () => {
+  let now = 100
+  vi.spyOn(performance, 'now').mockImplementation(() => now)
+  const { view, at, flush, track, pending } = setup(true)
+  try {
+    at(730)
+    const top = 448 + Number(track.style.transform.match(/, (-?[\d.]+)px/)![1])
+    fireEvent(window, new MouseEvent('pointermove', { clientX: 196, clientY: top + 20 }))
+    flush(); now += 200; flush()
+    const lines = view.container.querySelectorAll<HTMLElement>('[data-reading-line]')
+    const fields = view.container.querySelectorAll('[data-pointer-field]')
+    expect(lines[1].style.filter).toMatch(/^url/)
+    expect(lines[2].style.filter).toMatch(/^url/)
+    expect(fields[1].getAttribute('width')).toBe('200')
+    expect(fields[1].getAttribute('height')).toBe('120')
+    expect(fields[1].getAttribute('x')).toBe('16.00')
+    expect(fields[1].getAttribute('y')).toBe('-40.00')
+    expect(fields[2].getAttribute('y')).toBe('-100.00')
+    expect(view.container.querySelector('feDisplacementMap')).toBeNull()
+    expect(view.container.querySelector('[result="localNear"]')).toHaveAttribute('in', 'SourceGraphic')
+    expect(view.container.querySelector('[result="localSoft"]')).toHaveAttribute('stdDeviation', '3.4')
+    const noise = [...view.container.querySelectorAll('[data-pointer-noise]')].map(n => n.outerHTML)
+    expect(pending.size).toBe(0)
+    now += 3000; flush()
+    expect(lines[1].style.filter).toMatch(/^url/)
+    expect([...view.container.querySelectorAll('[data-pointer-noise]')].map(n => n.outerHTML)).toEqual(noise)
+    const writes = vi.spyOn(Element.prototype, 'setAttribute')
+    fireEvent(window, new MouseEvent('pointermove', { clientX: 196, clientY: top + 20 })); flush()
+    expect(writes).not.toHaveBeenCalled()
+    expect(pending.size).toBe(0)
+    fireEvent(document, new Event('pointerleave')); flush()
+    now += 400; flush()
+    expect(lines[1].style.filter).toBe('none')
+    expect(lines[2].style.filter).toBe('none')
+    expect(pending.size).toBe(0)
+  } finally { view.unmount() }
+})
+
+it('ignores touch, clears pointer softness on scroll/reduced motion and cleans up hidden/unmounted state', () => {
+  let now = 100
+  vi.spyOn(performance, 'now').mockImplementation(() => now)
+  const { view, at, flush, track, motion, pending } = setup()
+  try {
+    const line = view.container.querySelectorAll<HTMLElement>('[data-reading-line]')[1]
+    const move = (pointerType = 'mouse') => {
+      const top = 448 + Number(track.style.transform.match(/, (-?[\d.]+)px/)![1])
+      const event = new MouseEvent('pointermove', { clientX: 196, clientY: top + 20 })
+      Object.defineProperty(event, 'pointerType', { value: pointerType })
+      fireEvent(window, event); flush()
+    }
+    at(730); move('touch'); now += 200; flush()
+    expect(line.style.filter).toBe('none')
+    move(); now += 200; flush()
+    expect(line.style.filter).toMatch(/^url/)
+    at(820)
+    const mask = view.container.querySelectorAll('[result="pointerMask"]')[1]
+    expect(mask.firstElementChild).toHaveAttribute('slope', '0')
+    at(730); move(); now += 200; flush()
+    motion.matches = true; motion.addEventListener.mock.calls[0][1](); flush()
+    expect(line.style.filter).toBe('none')
+    motion.matches = false; motion.addEventListener.mock.calls[0][1](); flush(); move()
+    vi.spyOn(document, 'hidden', 'get').mockReturnValue(true)
+    document.dispatchEvent(new Event('visibilitychange'))
+    expect(pending.size).toBe(0)
+    vi.spyOn(document, 'hidden', 'get').mockReturnValue(false)
+    document.dispatchEvent(new Event('visibilitychange')); flush()
+    expect(line.style.filter).toBe('none')
+  } finally { view.unmount() }
+  expect(pending.size).toBe(0)
+})
+
+it('returns to a fading local patch from its current strength without a jump', () => {
+  let now = 100
+  vi.spyOn(performance, 'now').mockImplementation(() => now)
+  const { view, at, flush, track } = setup()
+  try {
+    at(730)
+    const top = 448 + Number(track.style.transform.match(/, (-?[\d.]+)px/)![1])
+    const move = (x: number) => { fireEvent(window, new MouseEvent('pointermove', { clientX: x, clientY: top + 20 })); flush() }
+    const power = () => Number(view.container.querySelectorAll('[result="pointerMask"]')[1].firstElementChild!.getAttribute('slope'))
+    move(196); now += 200; flush(); expect(power()).toBe(1)
+    move(800); now += 190; flush()
+    const fading = power(); expect(fading).toBeCloseTo(.5)
+    move(212); expect(power()).toBe(fading)
+    now += 180; flush(); expect(power()).toBe(1)
+  } finally { view.unmount() }
 })

@@ -15,6 +15,8 @@ export const fragmentShader = /* glsl */ `
   uniform vec4 uCrop;
   uniform vec2 uPointer;
   uniform vec2 uPointerTarget;
+  uniform sampler2D uTrailField;
+  uniform float uTrailDisplacement;
   uniform float uTime;
   uniform float uPointerPower;
   uniform float uVelocity;
@@ -72,6 +74,15 @@ export const fragmentShader = /* glsl */ `
 
     vec2 targetDelta = uPointerTarget - uPointer;
     magneticWarp += targetDelta * field * 0.03 * safe * motion;
+
+    // One filtered lookup replaces the per-pixel segment loop. The persistent
+    // wake only moves the existing image/mosaic UVs; it never reveals a sharper layer.
+    vec2 trailWarp = (texture2D(uTrailField, uv).rg * 255.0 - 128.0) / 127.0;
+    trailWarp *= uTrailDisplacement;
+    trailWarp.x /= uResolution.x / max(uResolution.y, 1.0);
+    // Preserve the current pointer's field exactly at its centre.
+    float centreProtection = mix(1.0, smoothstep(0.06, 0.15, pointerDistance), uPointerPower);
+    magneticWarp += trailWarp * centreProtection * safe * motion;
 
     vec2 warpedUv = uv + waterDrift + magneticWarp;
     vec2 gridUv = uv + magneticWarp;

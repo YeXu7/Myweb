@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import gardenTextureUrl from '../assets/digital-garden-panorama.png'
 import { calculatePointerVelocity, normalizePointer } from './interaction'
 import type { BackgroundCrop } from './backgroundFrame'
+import { createPointerTrail, POINTER_TRAIL_DISPLACEMENT } from './pointerTrail'
 import { fragmentShader, vertexShader } from './shaders'
 
 export type GardenSceneController = {
@@ -41,7 +42,16 @@ export function createGardenScene(container: HTMLElement): GardenSceneController
   texture.minFilter = THREE.LinearFilter
   texture.magFilter = THREE.LinearFilter
 
+  const trail = createPointerTrail()
+  const trailTexture = new THREE.DataTexture(trail.data, trail.width, trail.height, THREE.RGBAFormat, THREE.UnsignedByteType)
+  trailTexture.minFilter = THREE.LinearFilter
+  trailTexture.magFilter = THREE.LinearFilter
+  trailTexture.generateMipmaps = false
+  trailTexture.needsUpdate = true
+  let trailVersion = trail.version
   const uniforms = {
+    uTrailField: { value: trailTexture },
+    uTrailDisplacement: { value: POINTER_TRAIL_DISPLACEMENT },
     uTexture: { value: texture },
     uResolution: { value: new THREE.Vector2(1, 1) },
     uCrop: { value: new THREE.Vector4(0, 0, 1, 1) },
@@ -75,6 +85,7 @@ export function createGardenScene(container: HTMLElement): GardenSceneController
     const height = Math.max(container.clientHeight, 1)
     renderer.setSize(width, height, false)
     uniforms.uResolution.value.set(width, height)
+    trail.setAspect(width / height)
   }
 
   const renderFrame = () => {
@@ -91,6 +102,11 @@ export function createGardenScene(container: HTMLElement): GardenSceneController
     uniforms.uTime.value = reducedMotion
       ? 0
       : (performance.now() - startedAt) / 1000
+    trail.sample(performance.now())
+    if (trail.version !== trailVersion) {
+      trailTexture.needsUpdate = true
+      trailVersion = trail.version
+    }
     renderer.render(scene, camera)
   }
 
@@ -137,6 +153,8 @@ export function createGardenScene(container: HTMLElement): GardenSceneController
     previousPointer = { x: clientX, y: clientY }
     previousTime = now
     pointerActive = active && !inQuietZone
+    if (pointerActive && !reducedMotion && !document.hidden) trail.move(uvX, uvY, now)
+    else trail.breakPath()
     if (reducedMotion) renderStaticFrame()
   }
 
@@ -144,6 +162,7 @@ export function createGardenScene(container: HTMLElement): GardenSceneController
     reducedMotion = reduced
     uniforms.uReducedMotion.value = reduced ? 1 : 0
     if (reduced) {
+      trail.clear()
       pointerActive = false
       uniforms.uPointerPower.value = 0
       renderStaticFrame()
@@ -159,6 +178,9 @@ export function createGardenScene(container: HTMLElement): GardenSceneController
 
   const handleVisibility = () => {
     if (document.hidden) {
+      trail.clear()
+      pointerActive = false
+      uniforms.uPointerPower.value = 0
       cancelAnimationFrame(frame)
       frame = 0
     } else if (reducedMotion) {
@@ -173,6 +195,7 @@ export function createGardenScene(container: HTMLElement): GardenSceneController
     cancelAnimationFrame(frame)
     document.removeEventListener('visibilitychange', handleVisibility)
     texture.dispose()
+    trailTexture.dispose()
     material.dispose()
     mesh.geometry.dispose()
     renderer.dispose()

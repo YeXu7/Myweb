@@ -33,6 +33,6 @@ it('limits the planar focus outline to DOM rendering and supplies a visible canv
   const outlineRules = Array.from(style.sheet.cssRules).filter(rule => rule.selectorText?.includes('.paper-gallery__paper:focus-visible'))
   expect(outlineRules).toHaveLength(1)
   expect(outlineRules[0].selectorText).toContain(":not([data-canvas-ready='true'])")
-  expect(styles).toContain("[data-keyboard-preview='true'] .paper-gallery__caption h2")
+  expect(styles).toContain("[data-keyboard-preview='true'] .paper-gallery__index-entry[data-active='true'] .paper-gallery__index-name")
   expect(styles).toContain('text-decoration-line: underline')
 })

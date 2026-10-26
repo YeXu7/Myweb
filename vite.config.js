@@ -7,7 +7,7 @@ export default defineConfig({
     plugins: [react()],
     build: {
         rollupOptions: {
-            input: { main: 'index.html', lingji: 'projects/lingji/index.html' },
+            input: { main: 'index.html', lingji: 'projects/lingji/index.html', ott: 'projects/ott/index.html', ruying: 'projects/ruying/index.html', jixing: 'projects/jixing/index.html' },
         },
     },
     test: {

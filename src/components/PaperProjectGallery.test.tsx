@@ -155,14 +155,14 @@ describe('paper hover gallery', () => {
 
 
 describe('project focus', () => {
-  it('opens from a fresh touch hit, locks scroll, disables unavailable details and returns with Escape', () => {
+  it('opens from a fresh touch hit, locks scroll, links to the matching details and returns with Escape', () => {
     fine = false
     const { container } = setup(); tick(2)
     const shell = container.querySelector<HTMLElement>('.site-shell')!
     scene.hitTest.mockReturnValue(1)
     fireEvent.click(container.querySelector('.paper-gallery__stage')!, { clientX: 640, clientY: 360 }); tick(90)
     expect(screen.getByRole('dialog')).toHaveAccessibleName('腾讯视频 OTT 端')
-    expect(screen.getByRole('button', { name: '查看' })).toBeDisabled()
+    expect(screen.getByRole('link', { name: '查看' })).toHaveAttribute('href', '/Myweb/projects/ott/')
     expect(shell.style.overflow).toBe('hidden')
     fireEvent.keyDown(window, { key: 'Escape' }); tick(90)
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
@@ -197,7 +197,7 @@ describe('focus lifecycle and animation scheduling', () => {
     fireEvent.click(screen.getByRole('button', { name: '返回' })); tick(1)
     scene.hitTest.mockReturnValue(0); fireEvent.click(stage, { clientX: 640, clientY: 360 })
     fireEvent.keyDown(window, { key: 'Tab' })
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: '返回' }))
+    expect(document.activeElement).toBe(screen.getByRole('link', { name: '查看' }))
     tick(90)
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(shell.scrollTop).toBe(400); expect(shell.style.overflow).toBe('auto'); expect(shell.style.scrollBehavior).toBe('smooth')
@@ -415,7 +415,7 @@ it('offers two original double-line capsule controls without a visible unavailab
     expect(svg.querySelectorAll('path')).toHaveLength(2)
     expect(svg).toHaveAttribute('aria-hidden', 'true')
   }
-  expect(screen.getByText('项目详情暂未开放')).not.toBeVisible()
+  expect(screen.queryByText('项目详情暂未开放')).not.toBeInTheDocument()
   expect(screen.getByRole('link', { name: '查看' })).toHaveAttribute('href', '/Myweb/projects/lingji/')
   expect(screen.getByRole('link', { name: '查看' })).not.toHaveAttribute('aria-describedby')
 })
@@ -684,8 +684,7 @@ it('offers project 1 details and cycles keyboard focus between View and Return',
   expect(document.activeElement).toBe(view)
   fireEvent.keyDown(window, { key: 'Escape' }); tick(90)
   fireEvent.keyDown(container.querySelectorAll('[data-paper]')[1], { key: 'Enter' }); tick(90)
-  expect(screen.queryByRole('link', { name: '查看' })).not.toBeInTheDocument()
-  expect(screen.getByRole('button', { name: '查看' })).toBeDisabled()
+  expect(screen.getByRole('link', { name: '查看' })).toHaveAttribute('href', '/Myweb/projects/ott/')
 })
 
 it('restores an expanded repeated cover and its queue position without playing the opening again', () => {
@@ -786,4 +785,38 @@ it('retains the pre-entry scroll position when opening a cover as the gallery ap
   expect(restored.container.querySelector<HTMLElement>('.site-shell')!.scrollTop).toBe(950)
   fireEvent.click(screen.getByRole('button', { name: '返回' })); tick(90)
   expect(restored.container.querySelector<HTMLElement>('.site-shell')!.scrollTop).toBe(950)
+})
+
+
+it.each([
+  [0, '灵机', 'lingji'], [1, '腾讯视频 OTT 端', 'ott'], [2, '如影', 'ruying'], [3, '即行', 'jixing'],
+] as const)('opens and restores the matching detail for project %i including repeated occurrences', (index, title, slug) => {
+  const first = setup(); tick(2)
+  const shell = first.container.querySelector<HTMLElement>('.site-shell')!
+  shell.scrollTop = 2520; fireEvent.scroll(shell); tick(80)
+  fireEvent.wheel(shell, { deltaY: 400 + index * 610 }); tick(80)
+  scene.hitTest.mockReturnValue(index + 4)
+  fireEvent.click(first.container.querySelector('.paper-gallery__stage')!, { clientX: 640, clientY: 360 }); tick(90)
+  const view = screen.getByRole('link', { name: '查看' })
+  expect(view).toHaveAttribute('href', `/Myweb/projects/${slug}/`)
+  view.addEventListener('click', event => event.preventDefault()); fireEvent.click(view)
+  expect(window.location.hash).toBe(`#project-0${index + 1}`)
+  first.unmount()
+  const restored = setup()
+  expect(screen.getByRole('dialog')).toHaveAccessibleName(title)
+  const focus = (scene.paint.mock.calls.at(-1) as unknown as unknown[])[5] as { index: number; progress: number }
+  expect(focus.index).toBe(index + 4)
+  expect(focus.progress).toBe(1)
+  fireEvent.click(screen.getByRole('button', { name: '返回' })); tick(90)
+  expect(window.location.hash).toBe('#projects')
+  restored.unmount()
+})
+
+it.each([[1, '腾讯视频 OTT 端'], [2, '如影'], [3, '即行']] as const)('direct detail return falls back to expanded project %i', (index, title) => {
+  window.history.replaceState(null, '', `/Myweb/#project-0${index + 1}`)
+  const view = setup()
+  expect(screen.getByRole('dialog')).toHaveAccessibleName(title)
+  const focus = (scene.paint.mock.calls.at(-1) as unknown as unknown[])[5] as { index: number; progress: number }
+  expect(focus).toMatchObject({ index, progress: 1 })
+  view.unmount()
 })

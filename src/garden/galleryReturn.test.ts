@@ -24,3 +24,15 @@ it('falls back safely when browser storage is unavailable', () => {
   expect(readGalleryReturn()).toBeNull()
   expect(() => clearGalleryReturn()).not.toThrow()
 })
+
+
+it('isolates return snapshots between different project details', () => {
+  saveGalleryReturn(record)
+  saveGalleryReturn({ ...record, index: 7, scrollProgress: .8 })
+  expect(readGalleryReturn(0)?.index).toBe(4)
+  expect(readGalleryReturn(3)?.index).toBe(7)
+  expect(readGalleryReturn(1)).toBeNull()
+  clearGalleryReturn(3)
+  expect(readGalleryReturn(3)).toBeNull()
+  expect(readGalleryReturn(0)?.index).toBe(4)
+})

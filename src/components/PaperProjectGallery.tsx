@@ -8,7 +8,8 @@ import { createPaperSurfaceTracker } from '../garden/paperGallerySurface'
 import { paperPool, paperCardIndex, projectIdentity, resolvePaperEntry, loopGalleryPhase, wheelPixels, applyGalleryDelta } from '../garden/paperGalleryLoop'
 import { galleryEditorialMotion } from '../garden/galleryEditorial'
 import { galleryProgress } from '../garden/galleryProgress'
-import { galleryReturnHash, readGalleryReturn, saveGalleryReturn, clearGalleryReturn } from '../garden/galleryReturn'
+import { galleryReturnHash, projectFromReturnHash, readGalleryReturn, saveGalleryReturn, clearGalleryReturn } from '../garden/galleryReturn'
+import { projectDetails } from '../garden/projectDetails'
 import '../styles/paper-gallery.css'
 
 function PaperButtonOutline() {
@@ -113,15 +114,15 @@ export function PaperProjectGallery() {
       }
     }
     saveReturnRef.current = () => {
-      if (!focus || projectIdentity(focus.index) !== 0) return
+      if (!focus) return
       saveGalleryReturn({ reduced: !!motion?.matches, index: focus.index, scrollProgress: focus.scrollProgress, loopProgress: focus.loopProgress, flexVelocity: focus.flexVelocity, snapshot: focus.snapshot })
     }
     const finishReturn = () => {
       if (!focus) return
       const returning = focus
-      if (window.location.hash === galleryReturnHash) {
+      if (projectFromReturnHash(window.location.hash) !== null) {
         window.history.replaceState(window.history.state, '', '#projects')
-        clearGalleryReturn()
+        clearGalleryReturn(returning.index)
       }
       displayedPhase = returning.snapshot.phase; scales = [...returning.snapshot.scales]; emphasis = returning.snapshot.emphasis!
       flex = { bend: returning.snapshot.flutter, velocity: returning.flexVelocity }; idleTime = returning.snapshot.idleTime
@@ -436,12 +437,16 @@ export function PaperProjectGallery() {
     stage.addEventListener('lostpointercapture', pointerEnd); stage.addEventListener('dragstart', preventNativeDrag)
     shell.addEventListener('wheel', wheel, { passive: false })
     configure()
-    if (window.location.hash === galleryReturnHash) {
-      const stored = readGalleryReturn()
+    const returnProject = projectFromReturnHash(window.location.hash)
+    if (returnProject !== null) {
+      const stored = readGalleryReturn(returnProject)
       // A static list and the animated queue have different geometry and occurrence pools.
       const saved = stored?.reduced === !!motion?.matches ? stored : null
-      const nativeProgress = saved?.scrollProgress ?? (motion?.matches ? 0 : .18)
-      const index = motion?.matches ? 0 : (saved?.index ?? 0)
+      const fallbackProgress = motion?.matches
+        ? Math.max(0, Math.min(1, (cards[returnProject].getBoundingClientRect().top - shell.getBoundingClientRect().top + shell.scrollTop - start - 48) / travel))
+        : .18 + returnProject * .24
+      const nativeProgress = saved?.scrollProgress ?? fallbackProgress
+      const index = motion?.matches ? returnProject : (saved?.index ?? returnProject)
       overflow = motion?.matches ? 0 : (saved?.loopProgress ?? 0) * travel
       writeScroll(start + nativeProgress * travel)
       previousScroll = shell.scrollTop + overflow
@@ -525,18 +530,13 @@ export function PaperProjectGallery() {
           <h2 id="paper-focus-title">{projects[focusIndex ?? 0].title}</h2>
           <div className="paper-gallery__actions">
             <button type="button" data-return onClick={() => closeRef.current()}><PaperButtonOutline /><span>返回</span></button>
-            {focusIndex === 0 ? (
-              <a className="paper-gallery__view" href={`${import.meta.env.BASE_URL}projects/lingji/`} onClick={event => {
-                saveReturnRef.current()
-                if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
-                  window.history.replaceState(window.history.state, '', galleryReturnHash)
-                }
-              }}><PaperButtonOutline /><span>查看</span></a>
-            ) : (
-              <button type="button" className="paper-gallery__view" disabled aria-describedby="paper-focus-unavailable"><PaperButtonOutline /><span>查看</span></button>
-            )}
+            <a className="paper-gallery__view" href={`${import.meta.env.BASE_URL}projects/${projectDetails[focusIndex ?? 0].slug}/`} onClick={event => {
+              saveReturnRef.current()
+              if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
+                window.history.replaceState(window.history.state, '', galleryReturnHash(focusIndex ?? 0))
+              }
+            }}><PaperButtonOutline /><span>查看</span></a>
           </div>
-          <span id="paper-focus-unavailable" hidden>项目详情暂未开放</span>
         </div>
         <div className="paper-gallery__progress" role="img" aria-label={`Project ${centralProject + 1} of ${projects.length}`} aria-hidden={focusIndex !== null || reducedMode}>
           <span className="paper-gallery__progress-track" aria-hidden="true">

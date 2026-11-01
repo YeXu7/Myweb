@@ -12,7 +12,8 @@ export function ProfileCard() {
     } catch { setCopyState('failed') }
   }
   return (
-    <section className="profile-card" data-reading-card aria-label="About Yulia" lang="zh-CN">
+    <div className="profile-card-anchor" data-reading-card>
+    <section className="profile-card" aria-label="About Yulia" lang="zh-CN">
       <img className="profile-card__portrait" src={portrait} alt="Yulia Xu · 徐烨" width="960" height="640" decoding="async" />
       <div className="profile-card__identity">
         <h2><span lang="en">YULIA XU</span><span className="profile-card__chinese-name"> · 徐烨</span></h2>
@@ -24,5 +25,6 @@ export function ProfileCard() {
       </dl>
       <span className="profile-card__status" role="status">{copyState === 'copied' ? 'Copied' : copyState === 'failed' ? '请长按或选中微信号复制' : ''}</span>
     </section>
+    </div>
   )
 }

@@ -52,14 +52,15 @@ describe('paper hover gallery', () => {
     expect(sessionStorage.getItem('portfolio:project-3-return:v1')).toBe('unchanged')
     expect(container.querySelector('#projects')).not.toHaveAttribute('data-focus', 'true')
   })
-  it('keeps contact links independent from the paper hit area', () => {
+  it('shows only the approved experience and focus rows without contact duplication', () => {
     const { container } = setup(); tick(2)
-    scene.hitTest.mockReturnValue(0)
-    const email = container.querySelector<HTMLAnchorElement>('.paper-gallery__chapter a[href^="mailto:"]')!
-    expect(email).toHaveAttribute('href', 'mailto:xy657416708@foxmail.com')
-    email.addEventListener('click', event => event.preventDefault())
-    fireEvent.click(email); tick(2)
-    expect(container.querySelector('#projects')).not.toHaveAttribute('data-focus', 'true')
+    const chapter = container.querySelector('.paper-gallery__chapter')!
+    expect(chapter).toHaveTextContent('Experience & practice')
+    expect(chapter).toHaveTextContent('Experience3 年 UI/UX 设计经验')
+    expect(chapter).toHaveTextContent('Focus影视与内容平台 · 内容生产&消费两端')
+    expect(chapter).not.toHaveTextContent('Exploration')
+    expect(chapter.querySelectorAll('p')).toHaveLength(2)
+    expect(chapter.querySelector('a')).toBeNull()
   })
   it('renders a bounded two-cycle pool with four distinct project identities; all four names are readable before hover', () => {
     const { container } = setup(); tick(2)
@@ -673,7 +674,7 @@ it('removes the requested editorial copy and continuously scrubs progress within
   expect(container).not.toHaveTextContent('Everyday experiences.')
   expect(container).not.toHaveTextContent('PRODUCT · INTERACTION · MOTION')
   expect(container).toHaveTextContent('Selected works')
-  expect(container).toHaveTextContent('Phone+86 15307302170')
+  expect(container).toHaveTextContent('Experience & practice')
   shell.scrollTop = 2520 * .26; fireEvent.scroll(shell); tick(100)
   const early = value()
   expect(progress).toHaveAccessibleName('Project 1 of 4')

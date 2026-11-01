@@ -519,9 +519,9 @@ export function PaperProjectGallery() {
     <section id="projects" ref={sectionRef} className="paper-gallery" aria-label="Selected project gallery">
       <div className="paper-gallery__stage" tabIndex={-1} aria-hidden={!copyReady && focusIndex === null} inert={!copyReady && focusIndex === null}>
         <div className="paper-gallery__chapter" aria-hidden={!copyReady || focusIndex !== null} inert={!copyReady || focusIndex !== null}>
-          <h2>Feel free to contact me</h2>
-          <p><span data-chapter-title><span className="paper-gallery__contact-label">Phone</span><a href="tel:+8615307302170">+86 15307302170</a></span></p>
-          <p><span data-chapter-date><span className="paper-gallery__contact-label">Email</span><a href="mailto:xy657416708@foxmail.com">xy657416708@foxmail.com</a></span></p>
+          <h2>Experience &amp; practice</h2>
+          <p><span data-chapter-title><span className="paper-gallery__contact-label">Experience</span><span lang="zh-CN">3 年 UI/UX 设计经验</span></span></p>
+          <p><span data-chapter-date><span className="paper-gallery__contact-label">Focus</span><span lang="zh-CN">影视与内容平台 · 内容生产&amp;消费两端</span></span></p>
         </div>
         <aside className="paper-gallery__index" data-preview={activeIndex !== null} aria-label="Project index" aria-hidden={!copyReady || focusIndex !== null} inert={!copyReady || focusIndex !== null}>
           <div className="paper-gallery__index-content">

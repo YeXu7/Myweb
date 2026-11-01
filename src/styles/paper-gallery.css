@@ -313,3 +313,11 @@
 .reading-shell:has(.paper-gallery[data-focus='true']) .garden-intro__stage {
   visibility: hidden !important;
 }
+
+/* Experience and focus keep two aligned columns, wrapping content on narrow screens. */
+.paper-gallery__chapter { width: min(460px, calc(100% - 48px)); }
+.paper-gallery__chapter h2 { margin-bottom: 14px; }
+.paper-gallery__chapter p { white-space: normal; }
+.paper-gallery__chapter p > span { grid-template-columns: 12ch minmax(0, 1fr); }
+.paper-gallery__chapter .paper-gallery__contact-label { white-space: nowrap; }
+.paper-gallery__chapter [lang='zh-CN'] { font-family: 'DM Mono', 'PingFang SC', 'Microsoft YaHei', sans-serif; letter-spacing: .04em; }

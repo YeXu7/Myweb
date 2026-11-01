@@ -38,6 +38,29 @@ afterEach(() => {
 })
 
 describe('paper hover gallery', () => {
+  it('keeps the directory informational without links, navigation or click-through', () => {
+    const { container } = setup(); tick(2)
+    const index = container.querySelector('.paper-gallery__index')!
+    expect(index.querySelectorAll('a, button, [tabindex]')).toHaveLength(0)
+    const names = index.querySelectorAll('.paper-gallery__index-name')
+    expect(names).toHaveLength(4)
+    scene.hitTest.mockReturnValue(0)
+    sessionStorage.setItem('portfolio:project-3-return:v1', 'unchanged')
+    for (const name of names) fireEvent.click(name)
+    tick(2)
+    expect(window.location.hash).toBe('')
+    expect(sessionStorage.getItem('portfolio:project-3-return:v1')).toBe('unchanged')
+    expect(container.querySelector('#projects')).not.toHaveAttribute('data-focus', 'true')
+  })
+  it('keeps contact links independent from the paper hit area', () => {
+    const { container } = setup(); tick(2)
+    scene.hitTest.mockReturnValue(0)
+    const email = container.querySelector<HTMLAnchorElement>('.paper-gallery__chapter a[href^="mailto:"]')!
+    expect(email).toHaveAttribute('href', 'mailto:xy657416708@foxmail.com')
+    email.addEventListener('click', event => event.preventDefault())
+    fireEvent.click(email); tick(2)
+    expect(container.querySelector('#projects')).not.toHaveAttribute('data-focus', 'true')
+  })
   it('renders a bounded two-cycle pool with four distinct project identities; all four names are readable before hover', () => {
     const { container } = setup(); tick(2)
     expect(container.querySelectorAll('[data-sheet]')).toHaveLength(16)
@@ -572,13 +595,20 @@ it('scrubs chapter lines with native scroll and reverses without replaying a tim
   const shell = container.querySelector<HTMLElement>('.site-shell')!
   const title = container.querySelector<HTMLElement>('[data-chapter-title]')!
   const date = container.querySelector<HTMLElement>('[data-chapter-date]')!
+  const index = container.querySelector<HTMLElement>('.paper-gallery__index-content')!
+  expect(index.style.opacity).toBe('0')
+  expect(index.style.transform).toBe('translate3d(0, 96.00px, 0)')
   const initial = title.style.transform
   expect(initial).not.toBe('translate3d(0, 0.00%, 0)')
   shell.scrollTop = 300; fireEvent.scroll(shell); tick(2)
   expect(title.style.transform).toBe('translate3d(0, 0.00%, 0)')
   expect(date.style.transform).toBe('translate3d(0, 0.00%, 0)')
+  expect(index.style.opacity).toBe('1')
+  expect(index.style.transform).toBe('translate3d(0, 0.00px, 0)')
   shell.scrollTop = 0; fireEvent.scroll(shell); tick(2)
   expect(title.style.transform).toBe(initial)
+  expect(index.style.opacity).toBe('0')
+  expect(index.style.transform).toBe('translate3d(0, 96.00px, 0)')
   unmount()
 })
 
@@ -590,6 +620,7 @@ it('does not click through the static index or start dragging a cover underneath
   expect(container.querySelector('.paper-gallery__index')).toHaveAttribute('data-preview', 'false')
   fireEvent.pointerDown(entry, { clientX: 1000, clientY: 200, button: 0, buttons: 1 })
   fireEvent.pointerMove(window, { clientX: 1000, clientY: 100, buttons: 1 }); tick(2)
+  entry.addEventListener('click', event => event.preventDefault())
   fireEvent.click(entry, { clientX: 1000, clientY: 200 }); tick(2)
   expect(container.querySelector('#projects')).not.toHaveAttribute('data-focus', 'true')
   expect(container.querySelector('#projects')).not.toHaveAttribute('data-dragging', 'true')
@@ -601,7 +632,7 @@ it('marks only the selected title with a dash and gives its neighboring rows roo
   const { container } = setup(); tick(2)
   const stage = container.querySelector('.paper-gallery__stage')!
   const rows = [...container.querySelectorAll('.paper-gallery__index-entry')]
-  expect(container.querySelector('.paper-gallery__index')).toHaveTextContent('TAKE A CLOSER LOOK')
+  expect(container.querySelector('.paper-gallery__index')).toHaveTextContent('Selected works')
   expect(container.querySelectorAll('.paper-gallery__index-arrow, .paper-gallery__index-type')).toHaveLength(0)
   expect(rows.map(row => row.querySelector('.paper-gallery__index-symbol')?.textContent)).toEqual(['', '', '', ''])
   scene.hitTest.mockReturnValue(1)
@@ -642,7 +673,7 @@ it('removes the requested editorial copy and continuously scrubs progress within
   expect(container).not.toHaveTextContent('Everyday experiences.')
   expect(container).not.toHaveTextContent('PRODUCT · INTERACTION · MOTION')
   expect(container).toHaveTextContent('Selected works')
-  expect(container).toHaveTextContent('from 2023-2026')
+  expect(container).toHaveTextContent('Phone+86 15307302170')
   shell.scrollTop = 2520 * .26; fireEvent.scroll(shell); tick(100)
   const early = value()
   expect(progress).toHaveAccessibleName('Project 1 of 4')
@@ -819,4 +850,27 @@ it.each([[1, '腾讯视频 OTT 端'], [2, '如影'], [3, '即行']] as const)('d
   const focus = (scene.paint.mock.calls.at(-1) as unknown as unknown[])[5] as { index: number; progress: number }
   expect(focus).toMatchObject({ index, progress: 1 })
   view.unmount()
+})
+
+
+it.each([false, true])('gates gallery copy until the measured introduction exit and immediately reverses (reduced=%s)', reducedMotion => {
+  reduced = reducedMotion
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+    const shell = document.querySelector<HTMLElement>('.site-shell')
+    return new DOMRect(0, this.id === 'projects' ? 1000 - (shell?.scrollTop ?? 0) : 0, 1280, 720)
+  })
+  const { container } = setup(); tick(2)
+  const shell = container.querySelector<HTMLElement>('.site-shell')!
+  const section = container.querySelector('#projects')!
+  const chapter = container.querySelector('.paper-gallery__chapter')!
+  const index = container.querySelector('.paper-gallery__index')!
+  for (const position of [0, 900, 999, 1000, 1100, 999, 0]) {
+    shell.scrollTop = position; fireEvent.scroll(shell); tick(2)
+    expect(section).toHaveAttribute('data-copy-ready', String(position >= 1000))
+    for (const group of [chapter, index]) {
+      expect(group).toHaveAttribute('aria-hidden', String(position < 1000))
+      if (position < 1000) expect(group).toHaveAttribute('inert')
+      else expect(group).not.toHaveAttribute('inert')
+    }
+  }
 })

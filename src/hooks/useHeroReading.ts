@@ -58,8 +58,23 @@ export function useHeroReading(heroRef: RefObject<HTMLElement | null>) {
       return power
     }
 
+    const syncVisibility = () => {
+      const complete = shell.scrollTop >= end
+      const publish = () => {
+        if (shell.dataset.readingComplete === String(complete)) return
+        shell.dataset.readingComplete = String(complete)
+        shell.dispatchEvent(new Event('readingvisibilitychange'))
+      }
+      // Close the gallery before restoring the intro; open it only after the
+      // actual intro layer is hidden. Both directions are atomic before paint.
+      if (!complete) publish()
+      stage.style.visibility = complete ? 'hidden' : 'visible'
+      if (complete) publish()
+      return complete
+    }
     const paint = () => {
       frame = 0
+      const complete = syncVisibility()
       const scroll = Math.max(0, shell.scrollTop)
       // Read the last line in the clear centre, then let it pass through the top gutter.
       const leaving = clamp((scroll - (end - height * readingJourney.exitScreens)) / (height * readingJourney.exitScreens))
@@ -69,12 +84,9 @@ export function useHeroReading(heroRef: RefObject<HTMLElement | null>) {
       const pointerPower = samplePointer(now)
       const transform = `translate3d(0, ${translation.toFixed(2)}px, 0)`
       if (track.style.transform !== transform) track.style.transform = transform
-      const exit = clamp((scroll - (end - height * 0.04)) / (height * 0.04))
       if (stage.style.opacity !== '1') stage.style.opacity = '1'
       if (stamp && stamp.style.opacity !== String(1 - leaving)) stamp.style.opacity = String(1 - leaving)
-      const visibility = exit === 1 ? 'hidden' : 'visible'
-      if (stage.style.visibility !== visibility) stage.style.visibility = visibility
-      if (exit === 1) return
+      if (complete) return
       lines.forEach((line, index) => {
         const position = (centers[index] + translation) / windowHeight
         // Let the type soften into the outer gutter before the spatial mask fades it.
@@ -110,6 +122,7 @@ export function useHeroReading(heroRef: RefObject<HTMLElement | null>) {
     }
     const measure = () => {
       if (disposed) return
+      const previousEnd = end
       height = Math.max(shell.clientHeight, 1)
       end = projects ? projects.getBoundingClientRect().top - shell.getBoundingClientRect().top + shell.scrollTop : height * readingJourney.totalScreens
       const trackTop = track.getBoundingClientRect().top
@@ -125,11 +138,16 @@ export function useHeroReading(heroRef: RefObject<HTMLElement | null>) {
       const continuationTop = continuation ? continuation.getBoundingClientRect().top - trackTop : totalTravel
       firstTravel = Math.min(totalTravel, Math.max(0, continuationTop - windowHeight * 0.12))
       travelAt = createReadingMotion(height, end, windowHeight, firstTravel, totalTravel)
+      if (end !== previousEnd) shell.dispatchEvent(new Event('readinggeometrychange'))
+      syncVisibility()
       schedule()
     }
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure)
     observer?.observe(windowEl)
     observer?.observe(track)
+    observer?.observe(hero)
+    const about = shell.querySelector<HTMLElement>('#about')
+    if (about) observer?.observe(about)
     const handlePointer = (event: PointerEvent) => {
       if (disposed || document.hidden || reducedMotion?.matches || event.pointerType === 'touch' || event.buttons) return
       const next = { x: event.clientX, y: event.clientY }
@@ -153,7 +171,12 @@ export function useHeroReading(heroRef: RefObject<HTMLElement | null>) {
     }
 
     const leavePointer = () => { releasePointer(performance.now()); schedule() }
-    const handleScroll = () => { pointer = null; schedule() }
+    const handleScroll = () => {
+      pointer = null
+      const actualEnd = projects ? projects.getBoundingClientRect().top - shell.getBoundingClientRect().top + shell.scrollTop : height * readingJourney.totalScreens
+      if (actualEnd !== end) measure()
+      else { syncVisibility(); schedule() }
+    }
     shell.addEventListener('scroll', handleScroll, { passive: true })
     window.addEventListener('pointermove', handlePointer, { passive: true })
     document.addEventListener('pointerleave', leavePointer)

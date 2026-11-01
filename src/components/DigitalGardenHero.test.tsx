@@ -7,11 +7,14 @@ vi.mock('./DigitalGardenScene', () => ({
 }))
 
 describe('DigitalGardenHero', () => {
-  it('presents the approved introduction and preserves the original stamp', () => {
+  it('presents the introduction with a concise name and year signature', () => {
     render(<DigitalGardenHero />)
 
     expect(screen.getByRole('heading', { name: 'I’m Yulia Xu, a UI/UX designer with 3 years of experience.' })).toBeInTheDocument()
-    expect(screen.getByText('DESIGN PORTFOLIO · YULIA · 2026')).toBeInTheDocument()
+    expect(screen.getByText('YULIA XU · UI/UX DESIGNER · 2026')).toBeInTheDocument()
+    expect(screen.queryByText('xy657416708@foxmail.com')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Previously/)).not.toBeInTheDocument()
+    expect(screen.getByText('My work spans B2B and B2C products.').closest('p')).toHaveTextContent(/^My work spans B2B and B2C products\.$/)
     expect(screen.getByText('into my daily workflow.')).toBeInTheDocument()
     expect(screen.getByText('My work spans B2B and B2C products.')).toBeInTheDocument()
     expect(screen.getByText('Here are 4 selected projects')).toBeInTheDocument()

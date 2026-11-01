@@ -143,36 +143,34 @@
   pointer-events: none;
   transition: opacity 180ms ease-out;
 }
-@media (min-width: 1000px) and (min-height: 600px) {
-  /* Preserve title/date positions after removing the former 30px metadata line. */
-  .paper-gallery__chapter { padding-bottom: 30px; }
-}
-.paper-gallery__chapter h2 {
-  margin: 0 0 10px;
-  overflow: hidden;
-  padding-bottom: .12em;
-  font-family: 'IM Fell English', Georgia, serif;
-  font-size: clamp(28px, 3.4vw, 52px);
-  font-weight: 400;
-  line-height: 1.1;
-}
 .paper-gallery__chapter p {
   margin: 0;
   overflow: hidden;
-  color: #b6c6bb;
+  color: rgb(182 198 187 / 60%);
   font-family: 'DM Mono', monospace;
-  font-size: 13px;
+  font-size: .68rem;
   font-weight: 300;
-  line-height: 1.5;
+  line-height: 1.8;
+  letter-spacing: .12em;
+  white-space: nowrap;
 }
+.paper-gallery__chapter h2 {
+  margin: 0 0 16px;
+  color: #f3f2ed;
+  font: 300 .75rem/1.8 'DM Mono', monospace;
+  white-space: nowrap;
+  letter-spacing: .04em;
+}
+.paper-gallery__chapter p + p { margin-top: 8px; }
+.paper-gallery__chapter a { display: inline; pointer-events: auto; color: inherit; text-decoration: none; }
+.paper-gallery__chapter a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.paper-gallery__chapter a:focus-visible { outline: 1px solid #e5e5da; outline-offset: 4px; }
 .paper-gallery[data-focus='true'] .paper-gallery__chapter { opacity: 0; }
 @media (max-width: 699px) {
   .paper-gallery__chapter { left: 24px; bottom: 7svh; }
-  .paper-gallery__chapter h2 { font-size: 28px; }
 }
 @media (max-height: 500px) {
   .paper-gallery__chapter { bottom: 6svh; }
-  .paper-gallery__chapter h2 { font-size: 26px; margin-bottom: 6px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .paper-gallery__chapter { position: relative; left: auto; bottom: auto; margin: 0 24px; padding-top: 96px; transition: none; }
@@ -180,50 +178,71 @@
   .paper-gallery__chapter ~ .paper-gallery__papers { padding-top: 48px; }
 }
 
-.paper-gallery__chapter h2 > span,
-.paper-gallery__chapter p > span { display: block; }
+.paper-gallery__chapter p > span {
+  display: grid;
+  grid-template-columns: 6em max-content;
+  column-gap: 14px;
+  align-items: baseline;
+}
+.paper-gallery__contact-label { text-align: left; }
 
-/* Fixed columns keep every project name aligned while neighboring rows yield. */
+/* Reserve one summary slot; neighbors move together without reflowing the paper scene. */
 .paper-gallery__index {
   position: absolute;
   z-index: 2;
   top: max(88px, 9svh);
   right: 4.5vw;
-  width: 240px;
+  --summary-space: 52px;
+  width: 330px;
   max-width: calc(100% - 48px);
   color: #b6c6bb;
   cursor: default;
   transition: opacity 180ms ease-out;
 }
-.paper-gallery__index h3 {
-  margin: 0 0 12px 20px;
-  color: #fff;
-  font: 700 16px/1.5 'DM Mono', monospace;
-  letter-spacing: .08em;
+.paper-gallery__index-content { opacity: 0; transform: translate3d(0, 96px, 0); }
+.paper-gallery__index h2 {
+  margin: 0 0 8px 20px;
+  color: #e5e5da;
+  font: 400 28px/1.2 'IM Fell English', Georgia, serif;
+  letter-spacing: 0;
 }
-.paper-gallery__index ol { list-style: none; margin: 0; padding: 0; }
+.paper-gallery__index ol { list-style: none; margin: 0; padding: 0 0 var(--summary-space); }
 .paper-gallery__index-entry {
+  position: relative;
   display: grid;
-  grid-template-columns: 14px 30px minmax(0, 1fr);
+  grid-template-columns: 14px 34px minmax(0, 1fr);
   gap: 6px;
-  min-height: 30px;
+  height: 32px;
   align-items: center;
   transition: transform 220ms cubic-bezier(.16, 1, .3, 1), color 160ms ease-out;
 }
-.paper-gallery__index-entry[data-position='before'] { transform: translateY(-6px); }
-.paper-gallery__index-entry[data-position='after'] { transform: translateY(6px); }
-.paper-gallery__index-symbol { font: 400 16px/20px 'DM Mono', monospace; }
-.paper-gallery__index-number { font: 11px/20px 'DM Mono', monospace; font-variant-numeric: tabular-nums; }
+.paper-gallery__index-entry[data-position='after'] { transform: translateY(var(--summary-space)); }
+.paper-gallery__index-symbol { font: 400 16px/24px 'DM Mono', monospace; }
+.paper-gallery__index-number { font: 300 11px/24px 'DM Mono', monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .paper-gallery__index-label { min-width: 0; }
 .paper-gallery__index-name {
-  display: block; width: max-content; max-width: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
-  font-size: 12px; font-weight: 400; line-height: 20px; letter-spacing: .02em;
-  transform-origin: left center;
-  transition: transform 220ms cubic-bezier(.16, 1, .3, 1), color 160ms ease-out;
+  display: flex; align-items: center; min-height: 32px; width: max-content; max-width: 100%;
+  color: inherit; text-decoration: none;
+  font-family: 'DM Mono', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-size: 15px; font-weight: 300; line-height: 24px; letter-spacing: .04em; white-space: nowrap;
+  transition: color 160ms ease-out;
 }
 .paper-gallery__index-entry[data-active='true'] { color: #f3f2ed; }
-.paper-gallery__index-entry[data-active='true'] .paper-gallery__index-name { transform: scale(1.2); font-weight: 600; }
+.paper-gallery__index-entry[data-active='true'] .paper-gallery__index-name { font-weight: 400; }
+.paper-gallery__index-summary {
+  position: absolute; top: 32px; left: 60px; right: 0;
+  color: rgb(243 248 244 / 60%);
+  font: 300 12px/1.65 'DM Mono', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  letter-spacing: .02em;
+  opacity: 0; visibility: hidden; transform: translateY(4px); pointer-events: none;
+  transition: opacity 150ms ease-out, transform 180ms ease-out, visibility 150ms;
+}
+.paper-gallery__index-summary { white-space: normal; overflow-wrap: anywhere; }
+.paper-gallery__summary-compact { display: none; }
+.paper-gallery__index-entry[data-active='true'] .paper-gallery__index-summary {
+  opacity: 1; visibility: visible; transform: translateY(0);
+  transition-delay: 70ms;
+}
 .paper-gallery__progress {
   position: absolute; right: 4.5vw; bottom: 8svh; z-index: 1;
   display: flex; align-items: center; gap: 16px;
@@ -236,21 +255,61 @@
 .paper-gallery[data-focus='true'] .paper-gallery__index,
 .paper-gallery[data-focus='true'] .paper-gallery__progress { opacity: 0; pointer-events: none; }
 @media (max-width: 999px) {
-  .paper-gallery__index { right: 28px; width: 230px; }
+  .paper-gallery__index { right: 28px; width: 330px; }
 }
 @media (max-width: 599px) {
-  .paper-gallery__index { top: 88px; right: 24px; width: 230px; }
+  .paper-gallery__index { top: 88px; right: 24px; width: min(330px, calc(100% - 48px)); --summary-space: 52px; }
+  .paper-gallery__index h2 { font-size: 26px; margin-bottom: 8px; }
+  .paper-gallery__index-name { font-size: 15px; }
   .paper-gallery__progress { right: 24px; bottom: 3svh; }
 }
 @media (max-height: 599px) {
   .paper-gallery__index { top: 78px; }
-  .paper-gallery__index h3 { margin-bottom: 12px; }
-  .paper-gallery__index-entry { min-height: 28px; }
+  .paper-gallery__index h2 { margin-bottom: 8px; font-size: 26px; }
+  .paper-gallery__index-entry { height: 32px; }
+  .paper-gallery__index-name { min-height: 32px; }
+  .paper-gallery__index-summary { top: 32px; }
   .paper-gallery__progress { bottom: 5svh; }
 }
 @media (prefers-reduced-motion: reduce) {
   .paper-gallery__index { position: relative; top: auto; right: auto; width: min(100% - 48px, 420px); margin: 32px 24px 0; }
   .paper-gallery__progress { display: none; }
-  .paper-gallery__index, .paper-gallery__index-entry, .paper-gallery__index-name { transition: none; }
+  .paper-gallery__index, .paper-gallery__index-entry, .paper-gallery__index-name, .paper-gallery__index-summary { transition: none; }
   .paper-gallery[data-focus='true'] .paper-gallery__index { display: none; }
+}
+
+/* A section cannot announce its copy before the reading layer has fully left.
+   Visibility closes immediately on reverse, including the active summary. */
+.paper-gallery:not([data-copy-ready='true']) :is(.paper-gallery__chapter, .paper-gallery__index, .paper-gallery__progress) {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.paper-gallery:not([data-copy-ready='true']) :is(.paper-gallery__chapter, .paper-gallery__index) * {
+  visibility: hidden;
+  pointer-events: none;
+}
+.paper-gallery:not([data-copy-ready='true']) .paper-gallery__index-summary { transition: none; }
+@media (max-width: 427px) {
+  .paper-gallery__index-summary { left: 20px; }
+  .paper-gallery__summary-full { display: none; }
+  .paper-gallery__summary-compact { display: inline; }
+}
+
+/* The reading layer owns the transition, including all paper/canvas fallback
+   descendants. Default closed also covers initial load and style refresh. */
+.reading-shell:not([data-reading-complete='true']) .paper-gallery:not([data-focus='true']) .paper-gallery__stage {
+  opacity: 0 !important;
+  visibility: hidden;
+  pointer-events: none;
+  transition: none;
+}
+.reading-shell:not([data-reading-complete='true']) .paper-gallery:not([data-focus='true']) .paper-gallery__stage * {
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transition: none !important;
+}
+/* Older detail snapshots may restore a focus before the new chapter boundary. */
+.reading-shell:has(.paper-gallery[data-focus='true']) .garden-intro__stage {
+  visibility: hidden !important;
 }

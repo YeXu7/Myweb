@@ -22,13 +22,13 @@ export function DigitalGardenHero({ language = 'en' }: { language?: 'en' | 'zh' 
                 <span className="garden-intro__line" data-reading-line key={line}>{line}{' '}</span>
               ))}
             </h1>
-            <p className="garden-intro__paragraph">
+            {content.practice.length > 0 && <p className="garden-intro__paragraph">
               {content.practice.map((line) => (
                 <span className="garden-intro__line" data-reading-line key={line}>
                   {line}{' '}
                 </span>
               ))}
-            </p>
+            </p>}
             {language === 'en' && heroContinuation.map((paragraph, index) => (
               <p className="garden-intro__paragraph" data-reading-continuation={index === 0 ? '' : undefined} key={paragraph[0]}>
                 {paragraph.map(line => (

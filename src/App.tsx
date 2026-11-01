@@ -40,11 +40,13 @@ export default function App() {
     if (window.location.hash === '#projects') shell.scrollTop = projectStart
     shell.addEventListener('scroll', syncScrollState, { passive: true })
     window.addEventListener('resize', measure)
+    shell?.addEventListener('readinggeometrychange', measure)
 
     return () => {
       window.cancelAnimationFrame(frame)
       shell.removeEventListener('scroll', syncScrollState)
       window.removeEventListener('resize', measure)
+      shell?.removeEventListener('readinggeometrychange', measure)
     }
   }, [])
 

@@ -1,8 +1,8 @@
 export const heroContent = {
   en: {
     intro: ['I’m Yulia Xu,', 'a UI/UX designer', 'with 3 years of experience.'],
-    practice: ['Previously, I designed intuitive tools', 'for the film and video industry.'],
-    eyebrow: 'DESIGN PORTFOLIO · YULIA · 2026',
+    practice: [],
+    eyebrow: 'YULIA XU · UI/UX DESIGNER · 2026',
     greeting: "Hi, I’m",
     name: 'Yulia Xu',
     role: 'UI/UX Designer',
@@ -12,7 +12,7 @@ export const heroContent = {
   zh: {
     intro: ['我是 Yulia，', '一名 UI/UX 设计师，', '拥有 3 年设计经验。'],
     practice: ['为影像制作', '设计易用的工具，', '并将 AI 融入', '日常设计工作流。'],
-    eyebrow: 'DESIGN PORTFOLIO · YULIA · 2026',
+    eyebrow: 'YULIA XU · UI/UX DESIGNER · 2026',
     greeting: '你好，我是',
     name: 'Yulia Xu',
     role: 'UI/UX 设计师',
@@ -22,8 +22,8 @@ export const heroContent = {
 } as const
 
 export const heroContinuation = [
+  ['My work spans B2B and B2C products.'],
   [
-    'My work spans B2B and B2C products.',
     'Beyond interfaces,',
     'I bring motion design and AI',
     'into my daily workflow.',

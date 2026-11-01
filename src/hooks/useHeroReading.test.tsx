@@ -2,6 +2,10 @@ import { useRef } from 'react'
 import { act, fireEvent, render } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { useHeroReading } from './useHeroReading'
+import { readingJourney } from '../garden/readingJourney'
+
+const READING_END = readingJourney.totalScreens * 800
+const READING_CLEAR = READING_END - readingJourney.exitScreens * 800
 
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals() })
 
@@ -27,42 +31,61 @@ function setup(adjacent = false) {
   vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(800)
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
     const shell = this.closest<HTMLElement>('.site-shell')
-    return { top: this.id === 'projects' ? 2240 - (shell?.scrollTop ?? 0) : Number(this.dataset.top ?? 0), height: 40, left: 80, width: 400, right: 480, bottom: Number(this.dataset.top ?? 0) + 40 } as DOMRect
+    return { top: this.id === 'projects' ? READING_END - (shell?.scrollTop ?? 0) : Number(this.dataset.top ?? 0), height: 40, left: 80, width: 400, right: 480, bottom: Number(this.dataset.top ?? 0) + 40 } as DOMRect
   })
   const view = render(<ReadingFixture adjacent={adjacent} />)
   const shell = view.container.querySelector<HTMLElement>('.site-shell')!
   const track = view.container.querySelector<HTMLElement>('[data-reading-track]')!
-  const flush = () => act(() => { const work = [...pending.values()]; pending.clear(); work.forEach(callback => callback(16)) })
+  let frameTime = 0
+  const flush = () => act(() => { const work = [...pending.values()]; pending.clear(); frameTime += 16; work.forEach(callback => callback(frameTime)) })
   const at = (scroll: number) => {
     shell.scrollTop = scroll; shell.dispatchEvent(new Event('scroll')); flush()
+    // Anchor assertions concern the settled position; the tail has its own regression below.
+    for (let i = 0; pending.size && i < 80; i++) flush()
     return -Number(track.style.transform.match(/, ([\d.-]+)px/)![1])
   }
   flush()
   return { view, shell, track, at, flush, pending, motion }
 }
 
+it('moves only a small part of the reading track per input and stops as soon as input stops', () => {
+  const { view, shell, track, flush, pending } = setup()
+  const position = () => -Number(track.style.transform.match(/, ([\d.-]+)px/)![1])
+  try {
+    shell.scrollTop = 120; shell.dispatchEvent(new Event('scroll')); flush()
+    const stopped = position()
+    expect(stopped).toBeGreaterThan(0)
+    expect(stopped).toBeLessThan(100)
+    expect(pending.size).toBe(0)
+    for (let i = 0; i < 60; i++) flush()
+    expect(position()).toBe(stopped)
+    shell.scrollTop = 80; shell.dispatchEvent(new Event('scroll')); flush()
+    expect(position()).toBeLessThan(stopped)
+  } finally { view.unmount() }
+})
+
 it('keeps reading anchors and continuous velocity across both screen joins without parking the last line', () => {
   const { view, at } = setup()
   try {
     expect(at(0)).toBeCloseTo(0)
     expect(at(800)).toBeCloseTo(400)
-    expect(at(1760)).toBeCloseTo(680)
-    expect(at(2240)).toBeCloseTo(1060)
+    expect(at(READING_CLEAR)).toBeCloseTo(680)
+    expect(at(READING_END)).toBeCloseTo(1060)
     expect(at(5000)).toBeCloseTo(1060)
-    for (const join of [800, 1720, 1760, 2240]) {
+    for (const join of [800, (READING_CLEAR - 40), READING_CLEAR, READING_END]) {
       const before = (at(join) - at(join - 2)) / 2
       const after = (at(join + 2) - at(join)) / 2
       expect(Math.abs(before - after)).toBeLessThan(.05)
     }
-    expect(at(1740)).toBeGreaterThan(at(1720))
+    expect(at((READING_CLEAR - 20))).toBeGreaterThan(at((READING_CLEAR - 40)))
     // The last line stays in the original clear reading zone during its final approach.
-    for (const scroll of [1720, 1740, 1760]) expect((920 - at(scroll)) / 400).toBeGreaterThanOrEqual(.6)
-    for (const scroll of [1720, 1740, 1760]) expect((920 - at(scroll)) / 400).toBeLessThan(.78)
-    const forward = Array.from({ length: 113 }, (_, i) => at(i * 20))
+    for (const scroll of [(READING_CLEAR - 40), (READING_CLEAR - 20), READING_CLEAR]) expect((920 - at(scroll)) / 400).toBeGreaterThanOrEqual(.6)
+    for (const scroll of [(READING_CLEAR - 40), (READING_CLEAR - 20), READING_CLEAR]) expect((920 - at(scroll)) / 400).toBeLessThan(.78)
+    const forward = Array.from({ length: READING_END / 20 + 1 }, (_, i) => at(i * 20))
     expect(forward.every((value, i) => i === 0 || value >= forward[i - 1])).toBe(true)
-    for (let i = 112; i >= 0; i--) expect(at(i * 20)).toBe(forward[i])
+    for (let i = forward.length - 1; i >= 0; i--) expect(at(i * 20)).toBe(forward[i])
     expect(view.container.querySelector<HTMLElement>('.garden-intro__stage')!.style.visibility).toBe('visible')
-    at(2240)
+    at(READING_END)
     expect(view.container.querySelector<HTMLElement>('.garden-intro__stage')!.style.visibility).toBe('hidden')
   } finally { view.unmount() }
 })
@@ -77,11 +100,11 @@ it('does not rewrite identical text filters or SVG parameters and resumes at nat
     expect(filterWrites).not.toHaveBeenCalled()
     vi.spyOn(document, 'hidden', 'get').mockReturnValue(true)
     document.dispatchEvent(new Event('visibilitychange'))
-    shell.scrollTop = 1760; shell.dispatchEvent(new Event('scroll'))
+    shell.scrollTop = READING_CLEAR; shell.dispatchEvent(new Event('scroll'))
     expect(pending.size).toBe(0)
     vi.spyOn(document, 'hidden', 'get').mockReturnValue(false)
     document.dispatchEvent(new Event('visibilitychange')); flush()
-    expect(at(1760)).toBeCloseTo(680)
+    expect(at(READING_CLEAR)).toBeCloseTo(680)
     motion.matches = true; motion.addEventListener.mock.calls[0][1](); flush()
     for (const line of view.container.querySelectorAll<HTMLElement>('[data-reading-line]')) expect(line.style.filter).toBe('none')
   } finally { view.unmount() }

@@ -20,7 +20,13 @@
   left: 9vw;
   top: calc(35svh - 64px);
   margin: 0;
+  max-width: calc(91vw - 24px);
+  text-transform: none;
+  font: 300 .68rem/1.5 'DM Mono', monospace;
+  letter-spacing: .12em;
 }
+.garden-intro .garden-intro__stamp > span { letter-spacing: .12em; line-height: 1.5; }
+
 .garden-intro .garden-intro__window {
   position: absolute;
   left: 9vw;
@@ -55,14 +61,15 @@
 .garden-intro .garden-intro__line { display: block; width: max-content; white-space: nowrap; }
 
 @media (max-width: 800px) {
-  .garden-intro .garden-intro__stamp { left: 24px; top: calc(30svh - 64px); }
+  .garden-intro .garden-intro__stamp { left: 24px; top: calc(30svh - 82px); max-width: calc(100% - 48px); }
+  .garden-intro .garden-intro__line { width: auto; max-width: 100%; white-space: normal; }
+  .garden-intro p.garden-intro__paragraph { font-size: .86em; }
   .garden-intro .garden-intro__window {
     left: 24px;
     top: 30svh;
     width: calc(100% - 48px);
     max-width: 520px;
-    /* The longest approved line measures just under 17em in IM Fell English. */
-    font-size: min(clamp(24px, 6.6vw, 28px), calc((100vw - 48px) / 17.1));
+    font-size: clamp(24px, 6.6vw, 28px);
   }
 }
 @media (max-height: 600px) {
@@ -70,9 +77,13 @@
     top: 28svh;
     height: 10.5em;
     max-height: 65svh;
-    font-size: min(clamp(18px, 3.8svh, 28px), calc((100vw - 48px) / 17.1));
+    font-size: clamp(20px, 3.8svh, 28px);
     line-height: 1.35;
   }
-  .garden-intro .garden-intro__stamp { top: calc(28svh - 50px); }
+  .garden-intro .garden-intro__stamp { top: calc(28svh - 70px); }
   .garden-intro .garden-intro__paragraph { margin-bottom: 0.8em; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-shell.reading-shell { scroll-behavior: auto; }
 }

@@ -6,7 +6,7 @@ import { createPaperGalleryScene } from '../garden/paperGalleryScene'
 import { advanceFocus, advancePaperEmphasis, paperEmphasisTargets, focusLayout, paperPresentation, projectAspects, type PaperFocus, type PaperSnapshot } from '../garden/paperGalleryFocus'
 import { createPaperSurfaceTracker } from '../garden/paperGallerySurface'
 import { paperPool, paperCardIndex, projectIdentity, resolvePaperEntry, loopGalleryPhase, wheelPixels, applyGalleryDelta } from '../garden/paperGalleryLoop'
-import { galleryEditorialMotion } from '../garden/galleryEditorial'
+import { galleryEditorialMotion, galleryIndexMotion } from '../garden/galleryEditorial'
 import { galleryProgress } from '../garden/galleryProgress'
 import { galleryReturnHash, projectFromReturnHash, readGalleryReturn, saveGalleryReturn, clearGalleryReturn } from '../garden/galleryReturn'
 import { projectDetails } from '../garden/projectDetails'
@@ -27,6 +27,7 @@ export function PaperProjectGallery() {
   const [caption, setCaption] = useState({ index: 0, visible: false })
   const [centralProject, setCentralProject] = useState(0)
   const [reducedMode, setReducedMode] = useState(false)
+  const [copyReady, setCopyReady] = useState(false)
   const [focusIndex, setFocusIndex] = useState<number | null>(null)
   const saveReturnRef = useRef<() => void>(() => {})
   const closeRef = useRef<() => void>(() => {})
@@ -41,11 +42,27 @@ export function PaperProjectGallery() {
     const cards = Array.from(section.querySelectorAll<HTMLElement>('[data-paper]'))
     const stage = section.querySelector<HTMLElement>('.paper-gallery__stage')!
     const chapter = section.querySelector<HTMLElement>('.paper-gallery__chapter')!
+    const indexContent = section.querySelector<HTMLElement>('.paper-gallery__index-content')!
     const progressFill = section.querySelector<HTMLElement>('.paper-gallery__progress-fill')!
     const titleLine = chapter.querySelector<HTMLElement>('[data-chapter-title]')!
     const dateLine = chapter.querySelector<HTMLElement>('[data-chapter-date]')!
     const writeTransform = (element: HTMLElement, value: string) => { if (element.style.transform !== value) element.style.transform = value }
+    let editorialReady: boolean | null = null
     const paintEditorial = (reduced: boolean) => {
+      // Share the actual chapter boundary with the reading layer. Immediate hiding
+      // on reverse prevents an opacity transition from overlapping the intro.
+      const nextCopyReady = shell.classList.contains('reading-shell')
+        ? shell.dataset.readingComplete === 'true'
+        : shell.scrollTop >= start
+      if (editorialReady !== nextCopyReady) {
+        editorialReady = nextCopyReady
+        section.dataset.copyReady = String(nextCopyReady)
+        setCopyReady(nextCopyReady)
+      }
+      const indexEntrance = galleryIndexMotion(shell.scrollTop - start, height, reduced)
+      writeTransform(indexContent, `translate3d(0, ${indexEntrance.y.toFixed(2)}px, 0)`)
+      const indexOpacity = indexEntrance.opacity.toFixed(4)
+      if (indexContent.style.opacity !== indexOpacity) indexContent.style.opacity = indexOpacity
       const entrance = galleryEditorialMotion(shell.scrollTop - start, height, reduced)
       writeTransform(titleLine, `translate3d(0, ${entrance.titleY.toFixed(2)}%, 0)`)
       writeTransform(dateLine, `translate3d(0, ${entrance.dateY.toFixed(2)}%, 0)`)
@@ -213,7 +230,7 @@ export function PaperProjectGallery() {
       }
       const snapshot: PaperSnapshot = focus?.snapshot ?? { phase: displayedPhase ?? target, scales, flutter: flex.bend, idleTime, emphasis }
       const { phase } = snapshot
-      const reveal = focus ? 1 : clamp01((shell.scrollTop - start + height * .12) / (height * .22))
+      const reveal = focus ? 1 : clamp01((shell.scrollTop - start + height * .2) / (height * .25))
       const selected = focused ?? hovered
       stage.style.opacity = String(reveal); section.dataset.phase = phase.toFixed(4)
       ready = reveal > 0 && !reduced && (scene?.paint(phase, snapshot.flutter, snapshot.scales, selected, snapshot.idleTime, focus, snapshot.emphasis) ?? false)
@@ -292,7 +309,7 @@ export function PaperProjectGallery() {
     const pointerMove = (event: PointerEvent) => {
       if (drag?.active || focus || event.pointerType === 'touch' || !hoverMedia?.matches) return
       keyboard = false; focused = null
-      if ((event.target as Element).closest('.paper-gallery__index')) { pointerLeave(); return }
+      if ((event.target as Element).closest('.paper-gallery__index, .paper-gallery__chapter')) { pointerLeave(); return }
       if (motion?.matches) hovered = domHit(event.clientX, event.clientY)
       const rect = stage.getBoundingClientRect()
       pointer = { x: event.clientX - rect.left, y: event.clientY - rect.top, clientX: event.clientX, clientY: event.clientY }; hitPending = true; schedule()
@@ -317,7 +334,7 @@ export function PaperProjectGallery() {
     const preventNativeDrag = (event: DragEvent) => { if (!motion?.matches && !focus) event.preventDefault() }
     const click = (event: MouseEvent) => {
       if (suppressClick) { suppressClick = false; event.preventDefault(); return }
-      if (focus || (event.target as HTMLElement).closest('.paper-gallery__focus, .paper-gallery__index')) return
+      if (focus || (event.target as HTMLElement).closest('a, button, .paper-gallery__focus, .paper-gallery__index, .paper-gallery__chapter')) return
       let index: number | null
       if (motion?.matches) {
         const card = (event.target as HTMLElement).closest<HTMLElement>('[data-paper]')
@@ -414,6 +431,7 @@ export function PaperProjectGallery() {
       section.dataset.canvasReady = 'false'; clearInteraction()
     }
     const scroll = () => {
+      paintEditorial(motion?.matches ?? false)
       if (!focus && overflow > 0 && shell.scrollTop < start + travel - 1) { overflow = 0; displayedPhase = null; clearInteraction() }
       hitPending = true
       syncOffscreen()
@@ -463,6 +481,9 @@ export function PaperProjectGallery() {
       cancelAnimationFrame(frame); frame = 0; paint(0)
       shell.dispatchEvent(new Event('scroll'))
     }
+    const syncReadingVisibility = () => paintEditorial(motion?.matches ?? false)
+    shell.addEventListener('readingvisibilitychange', syncReadingVisibility)
+    shell.addEventListener('readinggeometrychange', measure)
     shell.addEventListener('scroll', scroll, { passive: true }); window.addEventListener('resize', measure)
     motion?.addEventListener('change', configure); hoverMedia?.addEventListener('change', clearInteraction)
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure)
@@ -478,6 +499,8 @@ export function PaperProjectGallery() {
       disposed = true; finishDrag(); cancelAnimationFrame(frame); observer?.disconnect(); intersection?.disconnect(); scene?.destroy(); fallback.destroy()
       section.dataset.focus = 'false'; restoreIsolation?.()
       closeRef.current = () => {}; saveReturnRef.current = () => {}
+      shell.removeEventListener('readingvisibilitychange', syncReadingVisibility)
+      shell.removeEventListener('readinggeometrychange', measure)
       shell.removeEventListener('scroll', scroll); window.removeEventListener('resize', measure)
       window.removeEventListener('keydown', keyDown); window.removeEventListener('blur', windowBlur)
       window.removeEventListener('pointermove', dragMove); window.removeEventListener('pointerup', pointerEnd); window.removeEventListener('pointercancel', pointerEnd)
@@ -491,29 +514,34 @@ export function PaperProjectGallery() {
     }
   }, [])
 
+  const activeIndex = caption.visible ? caption.index : null
   return (
     <section id="projects" ref={sectionRef} className="paper-gallery" aria-label="Selected project gallery">
-      <div className="paper-gallery__stage" tabIndex={-1}>
-        <div className="paper-gallery__chapter" aria-hidden={focusIndex !== null}>
-          <h2><span data-chapter-title>Selected works</span></h2>
-          <p><span data-chapter-date>from 2023-2026</span></p>
+      <div className="paper-gallery__stage" tabIndex={-1} aria-hidden={!copyReady && focusIndex === null} inert={!copyReady && focusIndex === null}>
+        <div className="paper-gallery__chapter" aria-hidden={!copyReady || focusIndex !== null} inert={!copyReady || focusIndex !== null}>
+          <h2>Feel free to contact me</h2>
+          <p><span data-chapter-title><span className="paper-gallery__contact-label">Phone</span><a href="tel:+8615307302170">+86 15307302170</a></span></p>
+          <p><span data-chapter-date><span className="paper-gallery__contact-label">Email</span><a href="mailto:xy657416708@foxmail.com">xy657416708@foxmail.com</a></span></p>
         </div>
-        <aside className="paper-gallery__index" data-preview={caption.visible} aria-label="Project index" aria-hidden={focusIndex !== null}>
-          <h3>TAKE A CLOSER LOOK</h3>
-          <ol>
-            {projects.map((project, index) => {
-              const selected = caption.visible && caption.index === index
-              return (
-                <li className="paper-gallery__index-entry" data-active={selected} data-position={!caption.visible ? 'rest' : selected ? 'selected' : index < caption.index ? 'before' : 'after'} aria-current={selected ? 'true' : undefined} key={project.id}>
-                  <span className="paper-gallery__index-symbol" aria-hidden="true">{selected ? '-' : ''}</span>
-                  <span className="paper-gallery__index-number">{project.id}<span aria-hidden="true"> / </span></span>
-                  <span className="paper-gallery__index-label">
-                    <span className="paper-gallery__index-name">{project.title}</span>
-                  </span>
-                </li>
-              )
-            })}
-          </ol>
+        <aside className="paper-gallery__index" data-preview={activeIndex !== null} aria-label="Project index" aria-hidden={!copyReady || focusIndex !== null} inert={!copyReady || focusIndex !== null}>
+          <div className="paper-gallery__index-content">
+            <h2>Selected works</h2>
+            <ol>
+              {projects.map((project, index) => {
+                const selected = activeIndex === index
+                return (
+                  <li className="paper-gallery__index-entry" data-active={selected} data-position={activeIndex === null ? 'rest' : selected ? 'selected' : index < activeIndex ? 'before' : 'after'} aria-current={selected ? 'true' : undefined} key={project.id}>
+                    <span className="paper-gallery__index-symbol" aria-hidden="true">{selected ? '-' : ''}</span>
+                    <span className="paper-gallery__index-number">{project.id}<span aria-hidden="true"> / </span></span>
+                    <span className="paper-gallery__index-label">
+                      <span className="paper-gallery__index-name">{project.title}</span>
+                      <span id={`project-summary-${project.id}`} className="paper-gallery__index-summary" aria-hidden={!selected}><span className="paper-gallery__summary-full">{project.summary}</span><span className="paper-gallery__summary-compact">{project.compactSummary}</span></span>
+                    </span>
+                  </li>
+                )
+              })}
+            </ol>
+          </div>
         </aside>
         <div className="paper-gallery__canvas" ref={canvasRef} />
         <div className="paper-gallery__papers">
@@ -538,7 +566,7 @@ export function PaperProjectGallery() {
             }}><PaperButtonOutline /><span>查看</span></a>
           </div>
         </div>
-        <div className="paper-gallery__progress" role="img" aria-label={`Project ${centralProject + 1} of ${projects.length}`} aria-hidden={focusIndex !== null || reducedMode}>
+        <div className="paper-gallery__progress" role="img" aria-label={`Project ${centralProject + 1} of ${projects.length}`} aria-hidden={!copyReady || focusIndex !== null || reducedMode}>
           <span className="paper-gallery__progress-track" aria-hidden="true">
             <span className="paper-gallery__progress-fill" />
           </span>

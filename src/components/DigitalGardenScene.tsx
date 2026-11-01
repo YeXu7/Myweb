@@ -70,6 +70,7 @@ export function DigitalGardenScene() {
     window.addEventListener('pointermove', handlePointerMove)
     document.addEventListener('pointerleave', handlePointerLeave)
     window.addEventListener('resize', handleResize)
+    shell?.addEventListener('readinggeometrychange', measure)
 
     return () => {
       disposed = true; cancelAnimationFrame(frame)
@@ -79,6 +80,7 @@ export function DigitalGardenScene() {
       window.removeEventListener('pointermove', handlePointerMove)
       document.removeEventListener('pointerleave', handlePointerLeave)
       window.removeEventListener('resize', handleResize)
+      shell?.removeEventListener('readinggeometrychange', measure)
       controller?.destroy()
     }
   }, [])

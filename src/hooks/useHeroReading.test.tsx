@@ -9,20 +9,22 @@ const READING_CLEAR = READING_END - readingJourney.exitScreens * 800
 
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals() })
 
-function ReadingFixture({ adjacent = false }: { adjacent?: boolean }) {
+function ReadingFixture({ adjacent = false, profile = false }: { adjacent?: boolean; profile?: boolean }) {
   const ref = useRef<HTMLElement>(null)
   useHeroReading(ref)
   return <main className="site-shell"><section ref={ref}><div className="garden-intro__stage">
     <div className="garden-intro__stamp"><span>Stamp</span></div>
+    {profile && <div data-profile-glass hidden aria-hidden="true" />}
     <div data-reading-window style={{ height: 400 }}><div data-reading-track>
       <span data-reading-line data-top="20">First line</span>
       <div data-reading-continuation data-top="448"><span data-reading-line data-top="448">Second screen</span>{adjacent && <span data-reading-line data-top="508">Nearby line</span>}</div>
-      <span data-reading-line data-top="900">Last line</span>
+      {profile && <section data-reading-card data-top="900" data-height="180"><button>Copy WeChat</button></section>}
+      <span data-reading-line data-top={profile ? '1800' : '900'}>Last line</span>
     </div></div>
-  </div></section><section id="projects" /></main>
+  </div></section>{profile && <section id="about" />}<section id="projects" /></main>
 }
 
-function setup(adjacent = false) {
+function setup(adjacent = false, profile = false) {
   const pending = new Map<number, FrameRequestCallback>(); let next = 0
   vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { pending.set(++next, callback); return next })
   vi.stubGlobal('cancelAnimationFrame', (id: number) => pending.delete(id))
@@ -31,9 +33,11 @@ function setup(adjacent = false) {
   vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(800)
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
     const shell = this.closest<HTMLElement>('.site-shell')
-    return { top: this.id === 'projects' ? READING_END - (shell?.scrollTop ?? 0) : Number(this.dataset.top ?? 0), height: 40, left: 80, width: 400, right: 480, bottom: Number(this.dataset.top ?? 0) + 40 } as DOMRect
+    if (profile && this.classList.contains('garden-intro__stage')) return new DOMRect(0, 0, 1280, 800)
+    if (profile && this.hasAttribute('data-reading-window')) return new DOMRect(80, -40, 400, 500)
+    return { top: this.id === 'projects' ? (profile ? 800 + parseFloat(shell?.style.getPropertyValue('--reading-continuation-height') || '800') : READING_END) - (shell?.scrollTop ?? 0) : Number(this.dataset.top ?? 0), height: Number(this.dataset.height ?? 40), left: 80, width: 400, right: 480, bottom: Number(this.dataset.top ?? 0) + 40 } as DOMRect
   })
-  const view = render(<ReadingFixture adjacent={adjacent} />)
+  const view = render(<ReadingFixture adjacent={adjacent} profile={profile} />)
   const shell = view.container.querySelector<HTMLElement>('.site-shell')!
   const track = view.container.querySelector<HTMLElement>('[data-reading-track]')!
   let frameTime = 0
@@ -197,5 +201,51 @@ it('returns to a fading local patch from its current strength without a jump', (
     const fading = power(); expect(fading).toBeCloseTo(.5)
     move(212); expect(power()).toBe(fading)
     now += 180; flush(); expect(power()).toBe(1)
+  } finally { view.unmount() }
+})
+
+
+it('budgets added content once and brings the profile into clear view for keyboard entry', () => {
+  const { view, shell, at } = setup(false, true)
+  try {
+    const continuation = parseFloat(shell.style.getPropertyValue('--reading-continuation-height'))
+    expect(continuation).toBeGreaterThan(800)
+    const card = view.container.querySelector<HTMLElement>('[data-reading-card]')!
+    const glass = view.container.querySelector<HTMLElement>('[data-profile-glass]')!
+    expect(glass.hidden).toBe(true)
+    expect(card.inert).toBe(true)
+    expect(card).toHaveAttribute('aria-hidden', 'true')
+    // The lower fading shoulder extends beyond the 400px content area.
+    // At top=420 the card is not interactive, but its visible backdrop must remain.
+    let low = 0, high = 800 + continuation
+    for (let i = 0; i < 20; i++) {
+      const mid = (low + high) / 2
+      if (at(mid) < 480) low = mid
+      else high = mid
+    }
+    const shoulderScroll = (low + high) / 2
+    at(shoulderScroll)
+    expect(card.inert).toBe(true)
+    expect(glass.hidden).toBe(false)
+    const bottomClip = Number(glass.style.clipPath.match(/inset\([^ ]+ 0 ([^p]+)px/)?.[1])
+    expect(bottomClip).toBeCloseTo(140, 0)
+    act(() => view.container.querySelector('section')!.dispatchEvent(new Event('profilefocusrequest')))
+    expect(card.inert).toBe(false)
+    expect(card).toHaveAttribute('aria-hidden', 'false')
+    expect(card.querySelector('button')).toHaveFocus()
+    expect(glass.hidden).toBe(false)
+    expect(glass.style.width).toBe('400px')
+    expect(glass.style.transform).toContain('translate3d(')
+    const contactScroll = shell.scrollTop
+    at(800 + continuation)
+    expect(glass.hidden).toBe(true)
+    expect(card.inert).toBe(true)
+    at(contactScroll)
+    expect(card.inert).toBe(false)
+    at(shoulderScroll)
+    expect(glass.hidden).toBe(false)
+    at(0)
+    expect(glass.hidden).toBe(true)
+    expect(parseFloat(shell.style.getPropertyValue('--reading-continuation-height'))).toBe(continuation)
   } finally { view.unmount() }
 })

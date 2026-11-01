@@ -1,7 +1,8 @@
-import { useRef } from 'react'
+import { Fragment, useRef } from 'react'
 import { heroContent, heroContinuation } from '../garden/content'
 import { useHeroReading } from '../hooks/useHeroReading'
 import '../styles/hero-reading.css'
+import { ProfileCard } from './ProfileCard'
 
 export function DigitalGardenHero({ language = 'en' }: { language?: 'en' | 'zh' }) {
   const content = heroContent[language]
@@ -15,6 +16,8 @@ export function DigitalGardenHero({ language = 'en' }: { language?: 'en' | 'zh' 
         <p className="hero__eyebrow garden-intro__stamp">
           <span>{content.eyebrow}</span>
         </p>
+        {language === 'en' && <div className="profile-glass" data-profile-glass aria-hidden="true" hidden />}
+        {language === 'en' && <button className="profile-entry" type="button" onClick={() => heroRef.current?.dispatchEvent(new Event('profilefocusrequest'))}>查看个人名片与联系方式</button>}
         <div className="garden-intro__window" data-reading-window>
           <div className="garden-intro__track" data-reading-track>
             <h1 id="intro-title" className="garden-intro__paragraph">
@@ -30,11 +33,14 @@ export function DigitalGardenHero({ language = 'en' }: { language?: 'en' | 'zh' 
               ))}
             </p>}
             {language === 'en' && heroContinuation.map((paragraph, index) => (
-              <p className="garden-intro__paragraph" data-reading-continuation={index === 0 ? '' : undefined} key={paragraph[0]}>
+              <Fragment key={paragraph[0]}>
+              <p className="garden-intro__paragraph" data-reading-continuation={index === 0 ? '' : undefined}>
                 {paragraph.map(line => (
                   <span className="garden-intro__line" data-reading-line key={line}>{line}{' '}</span>
                 ))}
               </p>
+              {index === 0 && <ProfileCard />}
+              </Fragment>
             ))}
           </div>
         </div>

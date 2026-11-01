@@ -87,3 +87,18 @@
 @media (prefers-reduced-motion: reduce) {
   .site-shell.reading-shell { scroll-behavior: auto; }
 }
+
+/* Contacts need a fully clear reading band; typography keeps its line defocus. */
+.garden-intro__window[data-card-reading='true'] {
+  mask-image: linear-gradient(to bottom, transparent, #000 10%, #000 90%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 10%, #000 90%, transparent);
+}
+.profile-entry { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); overflow: hidden; pointer-events: none; }
+.profile-entry:focus-visible {
+  left: 9vw; top: 18svh; width: auto; height: auto; clip-path: none; padding: 10px 14px;
+  border: 1px solid #c4d1c6; background: #071510; color: #f3f2ed; pointer-events: auto;
+}
+@media (max-height: 600px) {
+  .garden-intro .garden-intro__window { top: 23svh; max-height: 70svh; }
+  .garden-intro .garden-intro__stamp { top: calc(23svh - 60px); }
+}

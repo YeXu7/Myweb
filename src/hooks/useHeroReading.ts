@@ -2,6 +2,7 @@ import { useEffect, useId, type RefObject } from 'react'
 import { createReadingDefocus, readingPointer } from '../garden/readingDefocus'
 import { createReadingMotion } from '../garden/readingMotion'
 import { readingJourney } from '../garden/readingJourney'
+import { profileReadingContinuation, profileReadingState } from '../garden/profileReading'
 
 const clamp = (value: number) => Math.min(1, Math.max(0, value))
 
@@ -19,6 +20,12 @@ export function useHeroReading(heroRef: RefObject<HTMLElement | null>) {
     const track = hero.querySelector<HTMLElement>('[data-reading-track]')!
     const projects = shell.querySelector<HTMLElement>('#projects')
     const continuation = track.querySelector<HTMLElement>('[data-reading-continuation]')
+    const card = track.querySelector<HTMLElement>('[data-reading-card]')
+    // Keep the backdrop outside the masked text window so it samples the garden.
+    const profileGlass = stage.querySelector<HTMLElement>('[data-profile-glass]')
+    let glassX = 0, glassY = 0, clipTop = 0, clipBottom = 0
+    const about = shell.querySelector<HTMLElement>('#about')
+    let cardTop = 0, cardHeight = 0
     const lines = Array.from(track.querySelectorAll<HTMLElement>('[data-reading-line]'))
     const defocus = createReadingDefocus(filterPrefix, lines.length)
     hero.append(defocus.svg)
@@ -86,6 +93,21 @@ export function useHeroReading(heroRef: RefObject<HTMLElement | null>) {
       if (track.style.transform !== transform) track.style.transform = transform
       if (stage.style.opacity !== '1') stage.style.opacity = '1'
       if (stamp && stamp.style.opacity !== String(1 - leaving)) stamp.style.opacity = String(1 - leaving)
+      if (card) {
+        const state = profileReadingState(cardTop + translation, cardHeight, windowHeight, complete)
+        card.inert = !state.interactive
+        card.setAttribute('aria-hidden', String(!state.interactive))
+        windowEl.dataset.cardReading = String(state.present)
+        if (profileGlass) {
+          const y = glassY + translation
+          const glassVisible = !complete && y < clipBottom && y + cardHeight > clipTop
+          profileGlass.hidden = !glassVisible
+          if (glassVisible) {
+            profileGlass.style.transform = `translate3d(${glassX}px, ${y}px, 0)`
+            profileGlass.style.clipPath = `inset(${Math.max(0, clipTop - y)}px 0 ${Math.max(0, y + cardHeight - clipBottom)}px 0)`
+          }
+        }
+      }
       if (complete) return
       lines.forEach((line, index) => {
         const position = (centers[index] + translation) / windowHeight
@@ -137,6 +159,26 @@ export function useHeroReading(heroRef: RefObject<HTMLElement | null>) {
       totalTravel = Math.max(0, (centers.at(-1) ?? 0) - windowHeight * 0.6)
       const continuationTop = continuation ? continuation.getBoundingClientRect().top - trackTop : totalTravel
       firstTravel = Math.min(totalTravel, Math.max(0, continuationTop - windowHeight * 0.12))
+      if (card) {
+        const bounds = card.getBoundingClientRect()
+        cardTop = bounds.top - trackTop
+        cardHeight = bounds.height
+        if (profileGlass) {
+          const stageBounds = stage.getBoundingClientRect()
+          const windowBounds = windowEl.getBoundingClientRect()
+          glassX = bounds.left - stageBounds.left
+          glassY = bounds.top - lastTranslation - stageBounds.top
+          clipTop = windowBounds.top - stageBounds.top
+          clipBottom = windowBounds.bottom - stageBounds.top
+          profileGlass.style.width = `${bounds.width}px`
+          profileGlass.style.height = `${bounds.height}px`
+        }
+        if (about && cardHeight > 0) {
+          const budget = `${profileReadingContinuation(height, firstTravel, totalTravel)}px`
+          if (shell.style.getPropertyValue('--reading-continuation-height') !== budget) shell.style.setProperty('--reading-continuation-height', budget)
+          end = projects ? projects.getBoundingClientRect().top - shell.getBoundingClientRect().top + shell.scrollTop : height + parseFloat(budget)
+        }
+      }
       travelAt = createReadingMotion(height, end, windowHeight, firstTravel, totalTravel)
       if (end !== previousEnd) shell.dispatchEvent(new Event('readinggeometrychange'))
       syncVisibility()
@@ -146,7 +188,6 @@ export function useHeroReading(heroRef: RefObject<HTMLElement | null>) {
     observer?.observe(windowEl)
     observer?.observe(track)
     observer?.observe(hero)
-    const about = shell.querySelector<HTMLElement>('#about')
     if (about) observer?.observe(about)
     const handlePointer = (event: PointerEvent) => {
       if (disposed || document.hidden || reducedMotion?.matches || event.pointerType === 'touch' || event.buttons) return
@@ -177,6 +218,20 @@ export function useHeroReading(heroRef: RefObject<HTMLElement | null>) {
       if (actualEnd !== end) measure()
       else { syncVisibility(); schedule() }
     }
+    const focusProfile = () => {
+      if (!card) return
+      const target = Math.max(0, cardTop - (windowHeight - cardHeight) / 2)
+      let low = 0, high = end
+      for (let i = 0; i < 24; i++) {
+        const mid = (low + high) / 2
+        if (travelAt(mid) < target) low = mid
+        else high = mid
+      }
+      shell.scrollTop = (low + high) / 2
+      cancelAnimationFrame(frame); frame = 0; paint()
+      card.querySelector<HTMLElement>('button, a')?.focus({ preventScroll: true })
+    }
+    hero.addEventListener('profilefocusrequest', focusProfile)
     shell.addEventListener('scroll', handleScroll, { passive: true })
     window.addEventListener('pointermove', handlePointer, { passive: true })
     document.addEventListener('pointerleave', leavePointer)
@@ -197,6 +252,7 @@ export function useHeroReading(heroRef: RefObject<HTMLElement | null>) {
       document.removeEventListener('visibilitychange', handleVisibility)
       window.removeEventListener('resize', measure)
       reducedMotion?.removeEventListener('change', schedule)
+      hero.removeEventListener('profilefocusrequest', focusProfile)
       defocus.svg.remove()
       lines.forEach(line => line.style.removeProperty('filter'))
     }

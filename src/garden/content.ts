@@ -22,12 +22,7 @@ export const heroContent = {
 } as const
 
 export const heroContinuation = [
-  ['My work spans B2B and B2C products.'],
-  [
-    'Beyond interfaces,',
-    'I bring motion design and AI',
-    'into my daily workflow.',
-  ],
+  ['In my previous work,', 'I designed B2B and B2C products,', 'integrating AI into my design process.'],
   ['Here are 4 selected projects', 'that show how I design.'],
 ] as const
 

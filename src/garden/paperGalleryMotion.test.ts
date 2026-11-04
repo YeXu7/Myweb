@@ -36,8 +36,8 @@ describe('native-scroll paper gallery', () => {
     expect(focus.opacity).toBe(1)
     expect(paperPose(4, 1280, 720).opacity).toBe(0)
   })
-  it('keeps desktop paper compact and legible on small screens', () => {
-    expect(paperWidth(1440, 900)).toBeLessThan(1440 * 0.25)
+  it('gives desktop covers a quarter-screen measure while keeping short screens legible', () => {
+    expect(paperWidth(1440, 900)).toBe(1440 * 0.25)
     expect(paperWidth(390, 700)).toBeGreaterThan(240)
     expect(paperWidth(1280, 400) * 9 / 16).toBeLessThan(400 * 0.4)
   })
@@ -94,4 +94,20 @@ it('anchors the first desktop cover in the upper-left with later covers spanning
     expect(height / 2 - last.y).toBeGreaterThan(height * .55)
   }
   expect(paperPose(0, 390, 700).x).toBe(0)
+})
+
+it('keeps desktop covers overlapping and carries visible tail sheets beyond the viewport', () => {
+  for (const [w, h] of [[1280, 720], [1440, 900], [1920, 1080]]) {
+    const project = (d: number) => {
+      const p = paperPose(d, w, h)
+      const perspective = 1200 / (1200 - p.z)
+      const half = paperWidth(w, h) * Math.cos(p.rotateY) / 2 * perspective
+      const x = w / 2 + p.x * perspective
+      return { left: x - half, right: x + half, width: half * 2, opacity: p.opacity }
+    }
+    for (let d = 0; d > -3.5; d -= .5) expect(project(d).right).toBeGreaterThan(project(d - .5).left)
+    expect(project(-3.5).right).toBeGreaterThan(w)
+    expect(project(-3.5).opacity).toBe(1)
+    expect(project(-3).width / project(0).width).toBeGreaterThan(.9)
+  }
 })

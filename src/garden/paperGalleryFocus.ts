@@ -52,8 +52,8 @@ export function paperPresentation(entry: PaperEntry, width: number, height: numb
   const clarity = cardIndex === null ? 0 : state.emphasis?.clarity[cardIndex] ?? 0
   const spacing = (state.emphasis?.spacing[poolIndex] ?? 0) * size
   const distance = state.phase - entry.slot
-  const tx = -.28 * Math.cos(distance * .28) / Math.sin(.28) * width * (width < 700 ? .60 : .19)
-  const ty = height * ((width < 700 ? .18 : .125) + .018 * distance)
+  const tx = -.28 * Math.cos(distance * .28) / Math.sin(.28) * width * (width < 700 ? .60 : .24)
+  const ty = height * ((width < 700 ? .18 : .155) + .018 * distance)
   const tangentLength = Math.hypot(tx, ty)
   const result = {
     ...pose,

@@ -18,14 +18,14 @@ export function paperPose(distance: number, width: number, height: number) {
   const depth = Math.abs(d)
   const narrow = width < 700
   return {
-    x: (narrow ? 0 : -width * .21) - Math.sin(d * 0.28) / Math.sin(0.28) * width * (narrow ? 0.60 : 0.19),
-    y: height * ((narrow ? 0.025 : 0.215) + d * (narrow ? 0.18 : 0.125) + 0.009 * d * d),
+    x: -Math.sin(d * 0.28) / Math.sin(0.28) * width * (narrow ? 0.60 : 0.19),
+    y: height * (0.025 + d * (narrow ? 0.18 : 0.125) + 0.009 * d * d),
     z: d * 95,
     rotateX: -0.13 + d * 0.018,
     rotateY: -0.38 - d * 0.025,
     rotateZ: 0.065 + d * 0.012,
     scale: 1,
-    opacity: 1 - smooth((depth - (!narrow && d < 0 ? 3.5 : 2.9)) / (!narrow && d < 0 ? .4 : .8)),
+    opacity: 1 - smooth((depth - 2.9) / 0.8),
     bend: 15 + Math.min(depth, 2.5) * 4,
   }
 }

@@ -47,7 +47,9 @@ export function PaperProjectGallery() {
     const hasAbout = !!shell.querySelector('#about[data-about-chapter]')
     let entranceElapsed = 0, entranceStarted: number | null = null
     const entranceComplete = () => !hasAbout || !!motion?.matches || entranceElapsed >= galleryEntranceMs
-    const browsingPhase = (progress: number) => loopGalleryPhase(hasAbout ? Math.max(.12, progress) : progress)
+    // Match the supplied local reference at its second-project hold, using the original camera-space poses.
+    const referenceProgress = (progress: number) => hasAbout ? Math.max(0, progress) + .36 : progress
+    const browsingPhase = (progress: number) => loopGalleryPhase(referenceProgress(progress))
     const chapter = section.querySelector<HTMLElement>('.paper-gallery__chapter')!
     const indexContent = section.querySelector<HTMLElement>('.paper-gallery__index-content')!
     const progressFill = section.querySelector<HTMLElement>('.paper-gallery__progress-fill')!
@@ -293,7 +295,7 @@ export function PaperProjectGallery() {
         hitPending = false
       }
       const active = focused ?? hovered
-      const browsing = galleryProgress((shell.scrollTop - start + overflow) / travel)
+      const browsing = galleryProgress(referenceProgress((shell.scrollTop - start + overflow) / travel))
       writeTransform(progressFill, `scaleX(${browsing.fill.toFixed(5)})`)
       if (browsing.project !== progressIndex) { progressIndex = browsing.project; setCentralProject(browsing.project) }
       const current = projectIdentity(Math.max(0, Math.round(phase)))
@@ -490,7 +492,7 @@ export function PaperProjectGallery() {
       const saved = stored?.reduced === !!motion?.matches ? stored : null
       const fallbackProgress = motion?.matches
         ? Math.max(0, Math.min(1, (cards[returnProject].getBoundingClientRect().top - shell.getBoundingClientRect().top + shell.scrollTop - start - 48) / travel))
-        : .18 + returnProject * .24
+        : Math.max(0, .18 + returnProject * .24 - (hasAbout ? .36 : 0))
       const nativeProgress = saved?.scrollProgress ?? fallbackProgress
       const index = motion?.matches ? returnProject : (saved?.index ?? returnProject)
       overflow = motion?.matches ? 0 : (saved?.loopProgress ?? 0) * travel

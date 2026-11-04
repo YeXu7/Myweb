@@ -84,18 +84,6 @@ describe('native-scroll paper gallery', () => {
   })
 })
 
-it('anchors the first desktop cover in the upper-left with later covers spanning the stage', () => {
-  for (const [width, height] of [[1280, 720], [1920, 1080], [1440, 900]]) {
-    const first = paperPose(0, width, height)
-    const last = paperPose(-3, width, height)
-    expect(width / 2 + first.x).toBeLessThan(width * .3)
-    expect(height / 2 - first.y).toBeLessThan(height * .3)
-    expect(width / 2 + last.x).toBeGreaterThan(width * .75)
-    expect(height / 2 - last.y).toBeGreaterThan(height * .55)
-  }
-  expect(paperPose(0, 390, 700).x).toBe(0)
-})
-
 // Parameters verified from the actual 4173 bundle main-CI4lwR0p.js.
 it('matches local preview spacing and perspective without moving the gallery anchor', () => {
   for (const [w, h] of [[1280, 720], [1440, 900], [1920, 1080]]) {
@@ -108,4 +96,16 @@ it('matches local preview spacing and perspective without moving the gallery anc
       expect(pose.z).toBe(d * 95)
     }
   }
+})
+
+it('reproduces the local reference phase including the repeated Lingji tail', () => {
+  const phase = 1
+  const first = paperPose(phase, 1825, 1369)
+  const repeated = paperPose(phase - 4, 1825, 1369)
+  expect(first.x).toBeCloseTo(-1825 * .19)
+  expect(first.y).toBeCloseTo(1369 * (.025 + .125 + .009))
+  expect(first.z).toBe(95)
+  expect(repeated.opacity).toBeGreaterThan(.9)
+  const right = 1825 / 2 + (repeated.x + paperWidth(1825,1369) / 2) * 1200 / (1200 - repeated.z)
+  expect(right).toBeGreaterThan(1825)
 })

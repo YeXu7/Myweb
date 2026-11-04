@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { useAboutReadingBoundary } from '../hooks/useAboutReadingBoundary'
 import { useAboutDefocus } from '../hooks/useAboutDefocus'
 import tencentLogo from '../assets/about/tencent.png'
 import '../styles/contact-font.css'
@@ -48,6 +49,7 @@ const capabilities = [
 export function AboutExperience() {
   const ref = useRef<HTMLElement>(null)
   useAboutDefocus(ref)
+  useAboutReadingBoundary(ref)
   return (
     <section ref={ref} id="about" className="about-experience" data-about-chapter aria-label="About Yulia" lang="zh-CN">
       <div className="about-experience__content" data-about-content>

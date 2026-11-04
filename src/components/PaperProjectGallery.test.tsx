@@ -900,7 +900,7 @@ it('waits for full stage arrival, completes its entrance without more scroll, an
   expect(Number(stage.style.opacity)).toBeGreaterThan(0)
   const entrance = view.container.querySelector<HTMLElement>('.paper-gallery__entrance')!
   expect(entrance.style.transform).not.toBe('translate3d(0px, 0px, 0)')
-  tick(55) // No wheel or scroll: the clock must finish the entire entrance.
+  tick(75) // No wheel or scroll: the clock must finish the entire entrance.
   expect(entrance.style.transform).toBe('translate3d(0px, 0px, 0)')
   expect(scene.paint.mock.calls.at(-1)?.[0]).toBe(0)
   expect(scene.paint.mock.calls.at(-1)?.[2]).toEqual(Array(8).fill(1))
@@ -933,7 +933,7 @@ it('cancels an unfinished entrance on reverse without consuming wheel input, and
   shell.scrollTop = 990; fireEvent.scroll(shell); tick(4)
   expect(stage.style.opacity).toBe('0'); expect(stage).toHaveAttribute('inert')
   expect(shell.style.overflow).not.toBe('hidden')
-  shell.scrollTop = 1000; fireEvent.scroll(shell); tick(55)
+  shell.scrollTop = 1000; fireEvent.scroll(shell); tick(75)
   expect(stage.style.opacity).toBe('1'); expect(stage).not.toHaveAttribute('inert')
 })
 
@@ -945,7 +945,7 @@ it('uses elapsed wall time for the entrance even when animation frames are spars
   const shell = view.container.querySelector<HTMLElement>('.site-shell')!
   shell.scrollTop = 1000; fireEvent.scroll(shell); tick(1)
   act(() => {
-    time += 800
+    time += 1100
     const callbacks = [...frames.values()]; frames.clear(); callbacks.forEach(callback => callback(time))
   })
   expect(view.container.querySelector('#projects')).toHaveAttribute('data-entrance', 'complete')

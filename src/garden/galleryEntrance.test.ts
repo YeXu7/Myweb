@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 import { advanceGalleryEntrance, galleryEntranceProgress, galleryEntranceMs } from './galleryEntrance'
-it('finishes in800ms independent of scrolling and frame cadence; reverse resets immediately', () => {
+it('finishes in1100ms independent of scrolling and frame cadence; reverse resets immediately', () => {
   for (const dt of [8, 16, 40]) {
     let elapsed = 0
     for (let t = 0; t < galleryEntranceMs; t += dt) elapsed = advanceGalleryEntrance(elapsed, true, dt, false)

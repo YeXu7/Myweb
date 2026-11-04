@@ -1,4 +1,4 @@
-export const galleryEntranceMs = 800
+export const galleryEntranceMs = 1100
 
 /** Time owns only the entrance. Native scroll remains free in either direction. */
 export function advanceGalleryEntrance(elapsed: number, eligible: boolean, dt: number, reduced: boolean) {

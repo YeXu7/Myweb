@@ -157,3 +157,9 @@
 }
 
 @media (max-width: 599px) { .about-experience__title { font-size: clamp(32px, 6vw, 48px); } }
+
+/* Viewport-aligned reading exit; transparent above navigation's safe zone. */
+.about-experience {
+  mask-image: linear-gradient(to bottom, transparent var(--about-exit-stop, 0px), #000 calc(var(--about-exit-stop, 0px) + 32px));
+  -webkit-mask-image: linear-gradient(to bottom, transparent var(--about-exit-stop, 0px), #000 calc(var(--about-exit-stop, 0px) + 32px));
+}

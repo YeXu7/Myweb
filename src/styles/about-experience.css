@@ -1,0 +1,142 @@
+/* Composition references: supplied four-node career timeline and capability cards.
+   Materials inherit the garden, fine paper edges and DM Mono of the existing site. */
+.about-experience {
+  position: relative;
+  z-index: 2;
+  padding-block: clamp(40px, 6svh, 64px) clamp(80px, 10svh, 100px);
+  color: #f3f2ed;
+  font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  scroll-margin-top: 0;
+}
+
+.about-experience__content {
+  width: 82%;
+  margin-inline: auto;
+}
+
+.about-experience__title {
+  margin: 0 0 40px;
+  font-family: 'IM Fell English', 'Paper Handwriting', 'Songti SC', Georgia, serif;
+  font-size: clamp(36px, 4vw, 48px);
+  line-height: 1.1;
+  font-weight: 400;
+  letter-spacing: -.02em;
+}
+
+.about-experience__columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(120px, 12vw, 180px);
+}
+
+.about-experience__work,
+.about-experience__capabilities { min-width: 0; width: min(100%, clamp(560px, 48vw, 680px)); position: relative; isolation: isolate; }
+.about-experience__capabilities { justify-self: end; }
+.about-experience__work::before, .about-experience__capabilities::before { content: ''; position: absolute; z-index: -1; inset: -48px -56px; pointer-events: none; background: linear-gradient(90deg, rgb(0 7 5 / 92%) 0%, rgb(0 7 5 / 78%) 44%, transparent 100%); mask-image: radial-gradient(ellipse at 35% 50%, #000 38%, transparent 74%); -webkit-mask-image: radial-gradient(ellipse at 35% 50%, #000 38%, transparent 74%); }
+
+.about-experience__capabilities::before { background: linear-gradient(270deg, rgb(0 7 5 / 92%) 0%, rgb(0 7 5 / 78%) 44%, transparent 100%); mask-image: radial-gradient(ellipse at 65% 50%, #000 38%, transparent 74%); -webkit-mask-image: radial-gradient(ellipse at 65% 50%, #000 38%, transparent 74%); }
+
+.about-experience__company {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 14px;
+  row-gap: 6px;
+  margin-bottom: 32px;
+}
+.about-experience__logo {
+  grid-column: 1;
+  grid-row: 1;
+  display: block;
+  width: 80px;
+  height: 40px;
+  object-fit: contain;
+  object-position: left center;
+}
+.about-experience__company-copy { display: contents; }
+.about-experience__company h3 {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
+  font-size: 21px;
+  line-height: 1.45;
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+.about-experience__team {
+  grid-column: 2;
+  grid-row: 2;
+  margin: 0;
+  color: rgb(243 242 237 / 72%);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.about-experience__team span { white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+.about-experience__timeline { list-style: none; margin: 0; padding: 0; }
+.about-experience__timeline > li { position: relative; padding: 0 0 24px 28px; }
+.about-experience__timeline > li:last-child { padding-bottom: 0; }
+.about-experience__timeline > li::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 13px;
+  bottom: -8px;
+  width: 1px;
+  background: rgb(182 198 187 / 26%);
+}
+.about-experience__timeline > li:last-child::before { display: none; }
+.about-experience__timeline > li::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 7px;
+  height: 7px;
+  border: 1px solid rgb(182 198 187 / 66%);
+  border-radius: 50%;
+  background: #1c342b;
+}
+.about-experience__timeline h4 {
+  margin: 0;
+  font-size: clamp(17px, 1.4vw, 20px);
+  font-weight: 500;
+  line-height: 1.45;
+}
+.about-experience__project-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; }
+.about-experience__project-name {
+  margin: 0;
+  color: rgb(243 242 237 / 60%);
+  font-size: 14px;
+  line-height: 1.55;
+  font-weight: 300;
+}
+.about-experience__contribution {
+  margin: 10px 0 0;
+  max-width: 44em;
+  color: rgb(243 242 237 / 85%);
+  font-size: 15px;
+  font-weight: 300;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+.about-experience__capability-list { display: grid; gap: 28px; }
+.about-experience__card { padding: 0 0 28px; border-bottom: 1px solid rgb(182 198 187 / 26%); }
+.about-experience__card:last-child { padding-bottom: 0; border-bottom: 0; }
+.about-experience__card h3 { margin: 0; font-size: clamp(18px, 1.45vw, 21px); font-weight: 500; line-height: 1.5; text-wrap: balance; }
+.about-experience__description { margin: 14px 0 12px; color: rgb(243 242 237 / 85%); font-size: 15px; font-weight: 300; line-height: 1.9; text-wrap: pretty; overflow-wrap: anywhere; }
+.about-experience__tags { display: flex; flex-wrap: wrap; gap: 4px 12px; list-style: none; margin: 0; padding: 0; color: rgb(196 209 198 / 60%); font: 300 11px/1.7 'DM Mono', 'PingFang SC', sans-serif; }
+.about-experience__tags li + li::before { content: '·'; margin-right: 12px; }
+@media (max-width: 800px) {
+  .about-experience__content { width: calc(100% - 48px); }
+  .about-experience__capabilities { justify-self: start; }
+  .about-experience__title { margin-bottom: 32px; }
+  .about-experience__company { grid-template-columns: 58px minmax(0, 1fr); column-gap: 10px; }
+  .about-experience__logo { width: 58px; }
+  .about-experience__timeline > li { padding-left: 24px; }
+  .about-experience__work::before, .about-experience__capabilities::before { inset-inline: -24px; }
+}
+
+@media (max-width: 599px) { .about-experience__title { font-size: clamp(32px, 6vw, 48px); } }

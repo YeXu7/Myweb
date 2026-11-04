@@ -21,7 +21,7 @@ function ReadingFixture({ adjacent = false, profile = false }: { adjacent?: bool
       {profile && <section data-reading-card data-top="900" data-height="180"><button>Copy WeChat</button></section>}
       <span data-reading-line data-top={profile ? '1800' : '900'}>Last line</span>
     </div></div>
-  </div></section>{profile && <section id="about" />}<section id="projects" /></main>
+  </div></section>{profile && <section className="reading-continuation" />}<section id="projects" /></main>
 }
 
 function setup(adjacent = false, profile = false) {

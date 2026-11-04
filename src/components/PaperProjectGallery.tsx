@@ -7,6 +7,7 @@ import { advanceFocus, advancePaperEmphasis, paperEmphasisTargets, focusLayout, 
 import { createPaperSurfaceTracker } from '../garden/paperGallerySurface'
 import { paperPool, paperCardIndex, projectIdentity, resolvePaperEntry, loopGalleryPhase, wheelPixels, applyGalleryDelta } from '../garden/paperGalleryLoop'
 import { galleryEditorialMotion, galleryIndexMotion } from '../garden/galleryEditorial'
+import { advanceGalleryEntrance, galleryEntranceProgress, galleryEntranceMs } from '../garden/galleryEntrance'
 import { galleryProgress } from '../garden/galleryProgress'
 import { galleryReturnHash, projectFromReturnHash, readGalleryReturn, saveGalleryReturn, clearGalleryReturn } from '../garden/galleryReturn'
 import { projectDetails } from '../garden/projectDetails'
@@ -28,6 +29,7 @@ export function PaperProjectGallery() {
   const [centralProject, setCentralProject] = useState(0)
   const [reducedMode, setReducedMode] = useState(false)
   const [copyReady, setCopyReady] = useState(false)
+  const [entryReady, setEntryReady] = useState(false)
   const [focusIndex, setFocusIndex] = useState<number | null>(null)
   const saveReturnRef = useRef<() => void>(() => {})
   const closeRef = useRef<() => void>(() => {})
@@ -41,6 +43,11 @@ export function PaperProjectGallery() {
     const sheets = Array.from(section.querySelectorAll<HTMLElement>('[data-sheet]'))
     const cards = Array.from(section.querySelectorAll<HTMLElement>('[data-paper]'))
     const stage = section.querySelector<HTMLElement>('.paper-gallery__stage')!
+    const entranceGroup = section.querySelector<HTMLElement>('.paper-gallery__entrance')!
+    const hasAbout = !!shell.querySelector('#about[data-about-chapter]')
+    let entranceElapsed = 0, entranceStarted: number | null = null
+    const entranceComplete = () => !hasAbout || !!motion?.matches || entranceElapsed >= galleryEntranceMs
+    const browsingPhase = (progress: number) => loopGalleryPhase(hasAbout ? Math.max(.12, progress) : progress)
     const chapter = section.querySelector<HTMLElement>('.paper-gallery__chapter')!
     const indexContent = section.querySelector<HTMLElement>('.paper-gallery__index-content')!
     const progressFill = section.querySelector<HTMLElement>('.paper-gallery__progress-fill')!
@@ -48,7 +55,14 @@ export function PaperProjectGallery() {
     const dateLine = chapter.querySelector<HTMLElement>('[data-chapter-date]')!
     const writeTransform = (element: HTMLElement, value: string) => { if (element.style.transform !== value) element.style.transform = value }
     let editorialReady: boolean | null = null
+    let interactionReady: boolean | null = null
     const paintEditorial = (reduced: boolean) => {
+      const canInteract = shell.scrollTop >= start && entranceComplete()
+      if (interactionReady !== canInteract) {
+        interactionReady = canInteract
+        section.dataset.entryReady = String(canInteract)
+        setEntryReady(canInteract)
+      }
       // Share the actual chapter boundary with the reading layer. Immediate hiding
       // on reverse prevents an opacity transition from overlapping the intro.
       const nextCopyReady = shell.classList.contains('reading-shell')
@@ -59,14 +73,17 @@ export function PaperProjectGallery() {
         section.dataset.copyReady = String(nextCopyReady)
         setCopyReady(nextCopyReady)
       }
-      const indexEntrance = galleryIndexMotion(shell.scrollTop - start, height, reduced)
+      const entryProgress = hasAbout ? galleryEntranceProgress(entranceElapsed) : 1
+      const editorialOffset = hasAbout ? entryProgress * height * .36 : shell.scrollTop - start
+      const indexEntrance = galleryIndexMotion(editorialOffset, height, reduced)
       writeTransform(indexContent, `translate3d(0, ${indexEntrance.y.toFixed(2)}px, 0)`)
-      const indexOpacity = indexEntrance.opacity.toFixed(4)
+      const indexOpacity = (hasAbout ? entryProgress : indexEntrance.opacity).toFixed(4)
       if (indexContent.style.opacity !== indexOpacity) indexContent.style.opacity = indexOpacity
-      const entrance = galleryEditorialMotion(shell.scrollTop - start, height, reduced)
+      const entrance = galleryEditorialMotion(editorialOffset, height, reduced)
       writeTransform(titleLine, `translate3d(0, ${entrance.titleY.toFixed(2)}%, 0)`)
       writeTransform(dateLine, `translate3d(0, ${entrance.dateY.toFixed(2)}%, 0)`)
       writeTransform(chapter, `translate3d(0, ${entrance.groupY.toFixed(2)}px, 0)`)
+      if (hasAbout) chapter.style.opacity = String(entryProgress)
     }
     const dialog = section.querySelector<HTMLElement>('.paper-gallery__focus')!
     const returnButton = dialog.querySelector<HTMLButtonElement>('[data-return]')!
@@ -155,11 +172,11 @@ export function PaperProjectGallery() {
       schedule()
     }
     const openFocus = (index: number, trigger = cards[index], immediate = false) => {
-      if (focus) return
+      if (focus || (!immediate && (shell.scrollTop < start || !entranceComplete()))) return
       finishDrag()
       focus = {
         index, progress: immediate || motion?.matches ? 1 : 0, opening: true, scrollTop: shell.scrollTop, trigger, flexVelocity: flex.velocity, scrollProgress: (shell.scrollTop - start) / travel, chapterHeight: section.offsetHeight, originalMinHeight: section.style.minHeight, loopProgress: overflow / travel,
-        snapshot: { phase: displayedPhase ?? loopGalleryPhase((shell.scrollTop - start + overflow) / travel), scales: [...scales], flutter: flex.bend, idleTime, emphasis: { dimming: [...emphasis.dimming], spacing: [...emphasis.spacing], clarity: [...emphasis.clarity] } },
+        snapshot: { phase: displayedPhase ?? browsingPhase((shell.scrollTop - start + overflow) / travel), scales: [...scales], flutter: flex.bend, idleTime, emphasis: { dimming: [...emphasis.dimming], spacing: [...emphasis.spacing], clarity: [...emphasis.clarity] } },
       }
       isolate(); section.dataset.focus = 'true'; setFocusIndex(projectIdentity(index))
       dialog.style.opacity = immediate || motion?.matches ? '1' : '0'
@@ -196,6 +213,15 @@ export function PaperProjectGallery() {
       if (disposed || document.hidden || (!focus && !isVisible())) { lastTime = 0; return }
       const reduced = motion?.matches ?? false
       section.dataset.reduced = String(reduced)
+      const dt = lastTime ? Math.max(1, Math.min(time - lastTime, 50)) : 16
+      lastTime = time
+      if (hasAbout) {
+        if (shell.scrollTop < start) entranceStarted = null
+        else if (entranceStarted === null) entranceStarted = time
+        entranceElapsed = focus ? galleryEntranceMs : advanceGalleryEntrance(0, shell.scrollTop >= start, entranceStarted === null ? 0 : time - entranceStarted, reduced)
+        section.dataset.entrance = entranceComplete() ? 'complete' : shell.scrollTop >= start ? 'entering' : 'waiting'
+        writeTransform(entranceGroup, `translate3d(0, ${(1 - galleryEntranceProgress(entranceElapsed)) * height * .55}px, 0)`)
+      }
       paintEditorial(reduced)
       section.dataset.keyboardPreview = String(keyboard && focused !== null && !focus)
       if (reduced && !focus) {
@@ -207,9 +233,7 @@ export function PaperProjectGallery() {
         publishCaption(selected === null ? 0 : projectIdentity(selected), selected !== null)
         return
       }
-      const dt = lastTime ? Math.max(1, Math.min(time - lastTime, 50)) : 16
-      lastTime = time
-      const target = loopGalleryPhase((shell.scrollTop - start + overflow) / travel)
+      const target = browsingPhase((shell.scrollTop - start + overflow) / travel)
       if (focus) {
         focus.progress = reduced ? (focus.opening ? 1 : 0) : advanceFocus(focus.progress, focus.opening, dt)
         if (!focus.opening && focus.progress === 0) { finishReturn(); return }
@@ -230,7 +254,7 @@ export function PaperProjectGallery() {
       }
       const snapshot: PaperSnapshot = focus?.snapshot ?? { phase: displayedPhase ?? target, scales, flutter: flex.bend, idleTime, emphasis }
       const { phase } = snapshot
-      const reveal = focus ? 1 : clamp01((shell.scrollTop - start + height * .2) / (height * .25))
+      const reveal = focus ? 1 : hasAbout ? galleryEntranceProgress(entranceElapsed) : clamp01((shell.scrollTop - start + height * .2) / (height * .25))
       const selected = focused ?? hovered
       stage.style.opacity = String(reveal); section.dataset.phase = phase.toFixed(4)
       ready = reveal > 0 && !reduced && (scene?.paint(phase, snapshot.flutter, snapshot.scales, selected, snapshot.idleTime, focus, snapshot.emphasis) ?? false)
@@ -274,7 +298,7 @@ export function PaperProjectGallery() {
       if (browsing.project !== progressIndex) { progressIndex = browsing.project; setCentralProject(browsing.project) }
       const current = projectIdentity(Math.max(0, Math.round(phase)))
       publishCaption(active === null ? current : projectIdentity(active), reveal > 0 && (active !== null || !hoverMedia?.matches))
-      if (reveal > 0) schedule()
+      if (reveal > 0 || (hasAbout && shell.scrollTop >= start && !entranceComplete())) schedule()
     }
     const clearInteraction = () => { pointer = null; hovered = null; focused = null; section.dataset.keyboardPreview = 'false'; schedule() }
     const writeScroll = (value: number) => {
@@ -319,7 +343,7 @@ export function PaperProjectGallery() {
       section.dataset.actionKeyboard = 'false'
       if (focus) return
       keyboard = false; focused = null; suppressClick = false; schedule()
-      if (motion?.matches || event.button !== 0 || (event.pointerType && event.pointerType !== 'mouse') || !isVisible()) return
+      if (!entranceComplete() || shell.scrollTop < start || motion?.matches || event.button !== 0 || (event.pointerType && event.pointerType !== 'mouse') || !isVisible()) return
       if ((event.target as HTMLElement).closest('button, a, .paper-gallery__focus, .paper-gallery__index')) return
       drag = { pointerId: event.pointerId, startY: event.clientY, lastY: event.clientY, active: false }
     }
@@ -431,6 +455,7 @@ export function PaperProjectGallery() {
       section.dataset.canvasReady = 'false'; clearInteraction()
     }
     const scroll = () => {
+      if (hasAbout && shell.scrollTop < start && !focus) { entranceElapsed = 0; entranceStarted = null; stage.style.opacity = '0'; finishDrag(); clearInteraction() }
       paintEditorial(motion?.matches ?? false)
       if (!focus && overflow > 0 && shell.scrollTop < start + travel - 1) { overflow = 0; displayedPhase = null; clearInteraction() }
       hitPending = true
@@ -440,7 +465,10 @@ export function PaperProjectGallery() {
       else schedule()
     }
     const visibility = () => {
-      if (document.hidden) finishDrag()
+      if (document.hidden) {
+        finishDrag()
+        if (!entranceComplete()) { entranceStarted = null; entranceElapsed = 0 }
+      }
       cancelAnimationFrame(frame); frame = 0; lastTime = 0; previousScroll = shell.scrollTop + overflow
       if (!document.hidden) schedule()
     }
@@ -468,7 +496,8 @@ export function PaperProjectGallery() {
       overflow = motion?.matches ? 0 : (saved?.loopProgress ?? 0) * travel
       writeScroll(start + nativeProgress * travel)
       previousScroll = shell.scrollTop + overflow
-      displayedPhase = saved?.snapshot.phase ?? loopGalleryPhase(nativeProgress)
+      displayedPhase = saved?.snapshot.phase ?? browsingPhase(nativeProgress)
+      if (hasAbout) { entranceElapsed = galleryEntranceMs; entranceStarted = -galleryEntranceMs }
       if (saved) {
         scales = [...saved.snapshot.scales]; emphasis = saved.snapshot.emphasis!
         idleTime = saved.snapshot.idleTime; flex = { bend: saved.snapshot.flutter, velocity: saved.flexVelocity }
@@ -517,9 +546,9 @@ export function PaperProjectGallery() {
   const activeIndex = caption.visible ? caption.index : null
   return (
     <section id="projects" ref={sectionRef} className="paper-gallery" aria-label="Selected project gallery">
-      <div className="paper-gallery__stage" tabIndex={-1} aria-hidden={!copyReady && focusIndex === null} inert={!copyReady && focusIndex === null}>
+      <div className="paper-gallery__stage" tabIndex={-1} aria-hidden={(!copyReady || !entryReady) && focusIndex === null} inert={(!copyReady || !entryReady) && focusIndex === null}>
         <div className="paper-gallery__chapter" aria-hidden={!copyReady || focusIndex !== null} inert={!copyReady || focusIndex !== null}>
-          <h2>Experience &amp; practice</h2>
+          <h2>A BRIEF INTRO FOR MY WORK</h2>
           <p><span data-chapter-title><span className="paper-gallery__contact-label">Experience</span><span lang="zh-CN">3 年 UI/UX 设计经验</span></span></p>
           <p><span data-chapter-date><span className="paper-gallery__contact-label">Focus</span><span lang="zh-CN">影视与内容平台 · 内容生产&amp;消费两端</span></span></p>
         </div>
@@ -543,6 +572,7 @@ export function PaperProjectGallery() {
             </ol>
           </div>
         </aside>
+        <div className="paper-gallery__entrance">
         <div className="paper-gallery__canvas" ref={canvasRef} />
         <div className="paper-gallery__papers">
           {paperPool.map(entry => entry.projectIndex === null ? (
@@ -553,6 +583,7 @@ export function PaperProjectGallery() {
               <figcaption className="paper-gallery__static-caption"><strong>{projects[entry.projectIndex].title}</strong><span><span className="paper-gallery__static-type">{projects[entry.projectIndex].type}</span> · {projects[entry.projectIndex].id} / 04</span></figcaption>
             </figure>
           ))}
+        </div>
         </div>
         <div className="paper-gallery__focus" role="dialog" aria-modal="true" aria-labelledby="paper-focus-title" hidden={focusIndex === null}>
           <h2 id="paper-focus-title">{projects[focusIndex ?? 0].title}</h2>

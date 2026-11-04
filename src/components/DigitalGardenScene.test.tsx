@@ -120,7 +120,12 @@ it('drives matching fallback and WebGL framing from native scroll, resizing and 
   expect(plane.style.transform).toContain('scale(1.24)')
   shell.scrollTop = 720; shell.dispatchEvent(new Event('scroll')); flush()
   expect(setFraming.mock.calls.at(-1)![0]).toEqual(middle)
+  const initialResizeCount = resize.mock.calls.length
+  // A chapter/typography change only changes framing, not the GPU canvas size.
+  for (let i = 0; i < 5; i++) shell.dispatchEvent(new Event('readinggeometrychange'))
+  expect(resize).toHaveBeenCalledTimes(initialResizeCount)
   width = 390; height = 844; window.dispatchEvent(new Event('resize'))
+  expect(resize).toHaveBeenCalledTimes(initialResizeCount + 1)
   const resized = setFraming.mock.calls.at(-1)![0]
   expect(resized.width).toBeLessThan(first.width)
   motion.matches = true; motion.addEventListener.mock.calls[0][1](); flush()

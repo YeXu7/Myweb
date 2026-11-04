@@ -203,8 +203,8 @@
 .paper-gallery__index h2 {
   margin: 0 0 8px 20px;
   color: #e5e5da;
-  font: 400 28px/1.2 'IM Fell English', Georgia, serif;
-  letter-spacing: 0;
+  font: 400 clamp(36px, 4vw, 48px)/1.1 'IM Fell English', 'Paper Handwriting', 'Songti SC', Georgia, serif;
+  letter-spacing: -.02em;
 }
 .paper-gallery__index ol { list-style: none; margin: 0; padding: 0 0 var(--summary-space); }
 .paper-gallery__index-entry {
@@ -259,13 +259,13 @@
 }
 @media (max-width: 599px) {
   .paper-gallery__index { top: 88px; right: 24px; width: min(330px, calc(100% - 48px)); --summary-space: 52px; }
-  .paper-gallery__index h2 { font-size: 26px; margin-bottom: 8px; }
+  .paper-gallery__index h2 { font-size: clamp(32px, 6vw, 48px); margin-bottom: 8px; }
   .paper-gallery__index-name { font-size: 15px; }
   .paper-gallery__progress { right: 24px; bottom: 3svh; }
 }
 @media (max-height: 599px) {
   .paper-gallery__index { top: 78px; }
-  .paper-gallery__index h2 { margin-bottom: 8px; font-size: 26px; }
+  .paper-gallery__index h2 { margin-bottom: 8px; }
   .paper-gallery__index-entry { height: 32px; }
   .paper-gallery__index-name { min-height: 32px; }
   .paper-gallery__index-summary { top: 32px; }
@@ -321,3 +321,12 @@
 .paper-gallery__chapter p > span { grid-template-columns: 12ch minmax(0, 1fr); }
 .paper-gallery__chapter .paper-gallery__contact-label { white-space: nowrap; }
 .paper-gallery__chapter [lang='zh-CN'] { font-family: 'DM Mono', 'PingFang SC', 'Microsoft YaHei', sans-serif; letter-spacing: .04em; }
+
+/* The native entrance is presentation-only until the stage reaches the top. */
+.paper-gallery[data-entry-ready='false']:not([data-focus='true']) .paper-gallery__stage { cursor: default; }
+
+.paper-gallery__entrance { position: absolute; inset: 0; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .paper-gallery__entrance { position: relative; transform: none !important; } }
+@media (prefers-reduced-motion: reduce) {
+  .paper-gallery[data-focus='true'] .paper-gallery__entrance { position: absolute; inset: 0; height: 100%; }
+}

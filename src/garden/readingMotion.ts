@@ -2,13 +2,13 @@ import { readingJourney } from './readingJourney'
 
 /** Native scroll positions stay anchored; shared monotone slopes remove speed
  * jumps without overshooting the reading window or adding a settling timer. */
-export function createReadingMotion(height: number, end: number, windowHeight: number, firstTravel: number, totalTravel: number) {
+export function createReadingMotion(height: number, end: number, windowHeight: number, firstTravel: number, totalTravel: number, clearanceTravel = 0) {
   end = Math.max(1, end)
   height = Math.min(Math.max(1, height), end / 2)
   totalTravel = Math.max(0, totalTravel)
   firstTravel = Math.min(totalTravel, Math.max(0, firstTravel))
   const positions = [0, height, end - height * readingJourney.exitScreens, end]
-  const distances = [0, firstTravel, totalTravel, totalTravel + Math.max(0, windowHeight) * .95]
+  const distances = [0, firstTravel, totalTravel, Math.max(totalTravel + Math.max(0, windowHeight) * .95, clearanceTravel)]
   const spans = positions.slice(1).map((position, i) => position - positions[i])
   const secants = spans.map((span, i) => (distances[i + 1] - distances[i]) / span)
   // Weighted harmonic means preserve monotonicity even for very short paragraphs.

@@ -70,3 +70,26 @@ describe('panorama background framing', () => {
     expect(at(1.6, true).readingShade).toBe(0)
   })
 })
+
+
+it('keeps the full natural-flow About clear while continuing pan, then blurs only in Projects', () => {
+  for (const projectTop of [4200, 6800]) {
+    const at = (scroll: number) => backgroundFrame(1440, 800, scroll, projectTop, false, 800, true)
+    expect(at(2800).crop.x).toBeGreaterThan(at(2000).crop.x)
+    for (const scroll of [0, 2000, 2800, projectTop - 1, projectTop]) {
+      expect(at(scroll).defocus).toBe(0); expect(at(scroll).innerScale).toBe(1)
+    }
+    expect(at(projectTop + 280).defocus).toBeGreaterThan(0)
+    expect(at(projectTop + 800).defocus).toBe(1)
+    const back = at(2800); at(projectTop + 800); expect(at(2800)).toEqual(back)
+  }
+})
+
+it('softens only after Capabilities reaches the upper third and settles before the timed gallery reveal', () => {
+  const height = 900, bottom = 4800, projectTop = 4900, start = bottom - height / 3
+  const at = (scroll: number) => backgroundFrame(1440, height, scroll, projectTop, false, height, true, start)
+  expect(at(start - 1).defocus).toBe(0)
+  expect(at(start + 100).defocus).toBeGreaterThan(0)
+  expect(at(projectTop).defocus).toBe(1)
+  expect(at(start - 1).defocus).toBe(0)
+})

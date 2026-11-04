@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from 'react'
 import { backgroundFrame } from '../garden/backgroundFrame'
 import { createGardenScene } from '../garden/scene'
+import { capabilitiesBlurStart } from '../garden/aboutJourney'
 import { readingJourney } from '../garden/readingJourney'
 
 export function DigitalGardenScene() {
@@ -24,12 +25,13 @@ export function DigitalGardenScene() {
     const plane = container.closest<HTMLElement>('.reading-garden-plane')
     const backdrop = container.closest<HTMLElement>('.shared-garden')
     const projects = shell?.querySelector<HTMLElement>('#projects')
+    const about = shell?.querySelector<HTMLElement>('#about[data-about-chapter]')
     let frame = 0, disposed = false
-    let width = 1, height = 1, timelineHeight = 1, projectStart = readingJourney.totalScreens
+    let width = 1, height = 1, timelineHeight = 1, projectStart = readingJourney.totalScreens, blurStart = projectStart
     const paintFraming = () => {
       frame = 0
       if (disposed) return
-      const framing = backgroundFrame(width, height, shell?.scrollTop ?? 0, projectStart, motionQuery.matches, timelineHeight)
+      const framing = backgroundFrame(width, height, shell?.scrollTop ?? 0, projectStart, motionQuery.matches, timelineHeight, !!about, blurStart)
       container.style.backgroundSize = `100% 100%, ${framing.imageWidth}px ${framing.imageHeight}px`
       container.style.backgroundPosition = `0 0, ${framing.imageX}px ${framing.imageY}px`
       backdrop?.style.setProperty('--background-defocus', String(framing.defocus))
@@ -43,11 +45,19 @@ export function DigitalGardenScene() {
     }
     const measure = () => {
       cancelAnimationFrame(frame); frame = 0
-      width = Math.max(container.clientWidth || window.innerWidth, 1)
-      height = Math.max(container.clientHeight || window.innerHeight, 1)
+      const nextWidth = Math.max(container.clientWidth || window.innerWidth, 1)
+      const nextHeight = Math.max(container.clientHeight || window.innerHeight, 1)
+      const sizeChanged = width !== nextWidth || height !== nextHeight
+      width = nextWidth
+      height = nextHeight
       timelineHeight = Math.max(shell?.clientHeight || height, 1)
-      projectStart = projects && shell ? projects.getBoundingClientRect().top - shell.getBoundingClientRect().top + shell.scrollTop : timelineHeight * readingJourney.totalScreens
-      controller?.resize()
+      const handoff = projects
+      const handoffTop = handoff && shell ? handoff.getBoundingClientRect().top - shell.getBoundingClientRect().top + shell.scrollTop : timelineHeight * readingJourney.totalScreens
+      projectStart = handoffTop
+      const capabilities = about?.querySelector<HTMLElement>('.about-experience__capabilities')
+      const contentBottom = capabilities && shell ? capabilities.getBoundingClientRect().bottom - shell.getBoundingClientRect().top + shell.scrollTop : projectStart
+      blurStart = capabilitiesBlurStart(contentBottom, timelineHeight)
+      if (sizeChanged) controller?.resize()
       paintFraming()
     }
     const syncMotion = () => { controller?.setReducedMotion(motionQuery.matches); scheduleFraming() }

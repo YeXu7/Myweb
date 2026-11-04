@@ -23,7 +23,9 @@ describe('App portfolio flow', () => {
     expect(screen.queryByRole('region', { name: 'About' })).not.toBeInTheDocument()
     expect(screen.queryByText('02 / 03')).not.toBeInTheDocument()
     expect(screen.queryByText('Craft')).not.toBeInTheDocument()
-    expect(screen.getByRole('region', { name: 'Selected projects introduction' })).toBeInTheDocument()
+    expect(document.querySelector('#about[data-about-chapter]')).toBeInTheDocument()
+    expect(document.querySelectorAll('.about-experience__timeline > li')).toHaveLength(4)
+    expect(document.querySelectorAll('.about-experience__card')).toHaveLength(3)
 
   })
 
@@ -45,10 +47,10 @@ it('updates scroll styles without re-rendering the scene until the active naviga
   const pending = new Map<number, FrameRequestCallback>(); let next = 0
   vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { pending.set(++next, callback); return next })
   vi.stubGlobal('cancelAnimationFrame', (id: number) => pending.delete(id))
-  let projectScreens = 2.8
+  let projectScreens = 3.8
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
     const shell = this.closest<HTMLElement>('.site-shell')
-    return { top: this.id === 'projects' ? projectScreens * window.innerHeight - (shell?.scrollTop ?? 0) : 0 } as DOMRect
+    return { top: this.id === 'projects' ? projectScreens * window.innerHeight - (shell?.scrollTop ?? 0) : this.id === 'about' ? 2.35 * window.innerHeight - (shell?.scrollTop ?? 0) : 0 } as DOMRect
   })
   const flush = () => act(() => { const work = [...pending.values()]; pending.clear(); work.forEach(callback => callback(16)) })
   const view = render(<App />)
@@ -61,17 +63,17 @@ it('updates scroll styles without re-rendering the scene until the active naviga
     expect(vi.mocked(DigitalGardenScene).mock.calls.length).toBe(initialRenders)
     expect(shell.style.getPropertyValue('--page-progress')).toBe('0.55')
     expect(screen.getByRole('link', { name: 'Home' })).toHaveClass('hero__nav-item--active')
-    scrollTo(.56)
+    scrollTo(2.001)
     expect(screen.getByRole('link', { name: 'About' })).toHaveClass('hero__nav-item--active')
     const aboutRenders = vi.mocked(DigitalGardenScene).mock.calls.length
-    scrollTo(1); scrollTo(1.56); scrollTo(2.34)
+    scrollTo(2.1); scrollTo(2.56); scrollTo(3.79)
     expect(vi.mocked(DigitalGardenScene).mock.calls.length).toBe(aboutRenders)
     expect(shell.style.getPropertyValue('--first-screen-progress')).toBe('1')
-    scrollTo(2.36)
+    scrollTo(3.8)
     expect(screen.getByRole('link', { name: 'Projects' })).toHaveClass('hero__nav-item--active')
-    projectScreens = 3.2; window.dispatchEvent(new Event('resize')); flush()
+    projectScreens = 4.2; window.dispatchEvent(new Event('resize')); flush()
     expect(screen.getByRole('link', { name: 'About' })).toHaveClass('hero__nav-item--active')
-    scrollTo(2.76)
+    scrollTo(4.2)
     expect(screen.getByRole('link', { name: 'Projects' })).toHaveClass('hero__nav-item--active')
     scrollTo(0)
     expect(screen.getByRole('link', { name: 'Home' })).toHaveClass('hero__nav-item--active')

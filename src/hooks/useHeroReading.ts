@@ -2,6 +2,7 @@ import { useEffect, useId, type RefObject } from 'react'
 import { createReadingDefocus, readingPointer } from '../garden/readingDefocus'
 import { createReadingMotion } from '../garden/readingMotion'
 import { readingJourney } from '../garden/readingJourney'
+import { homeExitPosition, aboutLeadScreens } from '../garden/aboutJourney'
 import { profileReadingContinuation, profileReadingState } from '../garden/profileReading'
 
 const clamp = (value: number) => Math.min(1, Math.max(0, value))
@@ -24,8 +25,15 @@ export function useHeroReading(heroRef: RefObject<HTMLElement | null>) {
     // Keep the backdrop outside the masked text window so it samples the garden.
     const profileGlass = stage.querySelector<HTMLElement>('[data-profile-glass]')
     let glassX = 0, glassY = 0, clipTop = 0, clipBottom = 0
-    const about = shell.querySelector<HTMLElement>('#about')
-    let cardTop = 0, cardHeight = 0
+    const about = shell.querySelector<HTMLElement>('#about[data-about-chapter]')
+    const continuationSlot = shell.querySelector<HTMLElement>('.reading-continuation')
+    const aboutContent = about?.querySelector<HTMLElement>('[data-about-content]')
+    const readingEnd = () => {
+      const target = about ?? projects
+      const top = target ? target.getBoundingClientRect().top - shell.getBoundingClientRect().top + shell.scrollTop : height * readingJourney.totalScreens
+      return about ? homeExitPosition(top, height) : top
+    }
+    let cardTop = 0, cardHeight = 0, clearanceTravel = 0
     const lines = Array.from(track.querySelectorAll<HTMLElement>('[data-reading-line]'))
     const defocus = createReadingDefocus(filterPrefix, lines.length)
     hero.append(defocus.svg)
@@ -33,12 +41,13 @@ export function useHeroReading(heroRef: RefObject<HTMLElement | null>) {
     let frame = 0
     let disposed = false
     let height = 1
+    let measuredProjectsTop = 0
     let end = readingJourney.totalScreens
     let windowHeight = 1
     let firstTravel = 0
     let totalTravel = 0
     let centers: number[] = []
-    let travelAt = createReadingMotion(height, end, windowHeight, firstTravel, totalTravel)
+    let travelAt = createReadingMotion(height, end, windowHeight, firstTravel, totalTravel, clearanceTravel)
     let lineBounds: { left: number; top: number; width: number; height: number }[] = []
     let trackOrigin = 0, lastTranslation = 0
     let pointer: { x: number; y: number; envelopeAt: number; from: number; releasing: boolean } | null = null
@@ -68,8 +77,10 @@ export function useHeroReading(heroRef: RefObject<HTMLElement | null>) {
     const syncVisibility = () => {
       const complete = shell.scrollTop >= end
       const publish = () => {
-        if (shell.dataset.readingComplete === String(complete)) return
-        shell.dataset.readingComplete = String(complete)
+        const galleryComplete = complete && shell.scrollTop >= measuredProjectsTop
+        if (shell.dataset.readingComplete === String(galleryComplete) && shell.dataset.homeComplete === String(complete)) return
+        shell.dataset.homeComplete = String(complete)
+        shell.dataset.readingComplete = String(galleryComplete)
         shell.dispatchEvent(new Event('readingvisibilitychange'))
       }
       // Close the gallery before restoring the intro; open it only after the
@@ -86,7 +97,7 @@ export function useHeroReading(heroRef: RefObject<HTMLElement | null>) {
       // Read the last line in the clear centre, then let it pass through the top gutter.
       const leaving = clamp((scroll - (end - height * readingJourney.exitScreens)) / (height * readingJourney.exitScreens))
       const translation = -travelAt(scroll)
-      lastTranslation = translation
+      lastTranslation = Number(translation.toFixed(2))
       const now = performance.now()
       const pointerPower = samplePointer(now)
       const transform = `translate3d(0, ${translation.toFixed(2)}px, 0)`
@@ -145,8 +156,8 @@ export function useHeroReading(heroRef: RefObject<HTMLElement | null>) {
     const measure = () => {
       if (disposed) return
       const previousEnd = end
-      height = Math.max(shell.clientHeight, 1)
-      end = projects ? projects.getBoundingClientRect().top - shell.getBoundingClientRect().top + shell.scrollTop : height * readingJourney.totalScreens
+      height = Math.max(shell.clientHeight || window.innerHeight, 1)
+      end = readingEnd()
       const trackTop = track.getBoundingClientRect().top
       trackOrigin = trackTop - lastTranslation
       lineBounds = lines.map(line => {
@@ -163,6 +174,7 @@ export function useHeroReading(heroRef: RefObject<HTMLElement | null>) {
         const bounds = card.getBoundingClientRect()
         cardTop = bounds.top - trackTop
         cardHeight = bounds.height
+        clearanceTravel = cardTop + cardHeight + (parseFloat(window.getComputedStyle(windowEl).paddingTop) || 0) + 1
         if (profileGlass) {
           const stageBounds = stage.getBoundingClientRect()
           const windowBounds = windowEl.getBoundingClientRect()
@@ -173,14 +185,22 @@ export function useHeroReading(heroRef: RefObject<HTMLElement | null>) {
           profileGlass.style.width = `${bounds.width}px`
           profileGlass.style.height = `${bounds.height}px`
         }
-        if (about && cardHeight > 0) {
-          const budget = `${profileReadingContinuation(height, firstTravel, totalTravel)}px`
+        // The profile is now the final item: reserve a centred reading position
+        // before its full bottom edge travels out of the mask.
+        totalTravel = Math.max(totalTravel, cardTop + cardHeight / 2 - windowHeight / 2)
+        if (continuationSlot && cardHeight > 0) {
+          const budget = `${profileReadingContinuation(height, firstTravel, totalTravel) + (about ? height * aboutLeadScreens : 0)}px`
           if (shell.style.getPropertyValue('--reading-continuation-height') !== budget) shell.style.setProperty('--reading-continuation-height', budget)
-          end = projects ? projects.getBoundingClientRect().top - shell.getBoundingClientRect().top + shell.scrollTop : height + parseFloat(budget)
+          end = readingEnd()
         }
       }
-      travelAt = createReadingMotion(height, end, windowHeight, firstTravel, totalTravel)
-      if (end !== previousEnd) shell.dispatchEvent(new Event('readinggeometrychange'))
+      travelAt = createReadingMotion(height, end, windowHeight, firstTravel, totalTravel, clearanceTravel)
+      const nextProjectsTop = projects ? projects.getBoundingClientRect().top - shell.getBoundingClientRect().top + shell.scrollTop : end
+      const geometryChanged = Math.abs(end - previousEnd) > .5 || Math.abs(nextProjectsTop - measuredProjectsTop) > .5
+      measuredProjectsTop = nextProjectsTop
+      if (geometryChanged) {
+        shell.dispatchEvent(new Event('readinggeometrychange'))
+      }
       syncVisibility()
       schedule()
     }
@@ -189,6 +209,8 @@ export function useHeroReading(heroRef: RefObject<HTMLElement | null>) {
     observer?.observe(track)
     observer?.observe(hero)
     if (about) observer?.observe(about)
+    if (aboutContent) observer?.observe(aboutContent)
+    if (continuationSlot) observer?.observe(continuationSlot)
     const handlePointer = (event: PointerEvent) => {
       if (disposed || document.hidden || reducedMotion?.matches || event.pointerType === 'touch' || event.buttons) return
       const next = { x: event.clientX, y: event.clientY }
@@ -214,9 +236,8 @@ export function useHeroReading(heroRef: RefObject<HTMLElement | null>) {
     const leavePointer = () => { releasePointer(performance.now()); schedule() }
     const handleScroll = () => {
       pointer = null
-      const actualEnd = projects ? projects.getBoundingClientRect().top - shell.getBoundingClientRect().top + shell.scrollTop : height * readingJourney.totalScreens
-      if (actualEnd !== end) measure()
-      else { syncVisibility(); schedule() }
+      syncVisibility()
+      schedule()
     }
     const focusProfile = () => {
       if (!card) return

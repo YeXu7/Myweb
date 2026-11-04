@@ -9,7 +9,7 @@ const reference = { left: 6, top: 0, width: originalAspect * 640, height: 640 }
 export type BackgroundCrop = { x: number; y: number; width: number; height: number }
 
 /** Stateless native-scroll framing, shared by texture sampling and the CSS fallback. */
-export function backgroundFrame(width: number, height: number, scroll: number, projectStart: number, reduced: boolean, timelineHeight = height) {
+export function backgroundFrame(width: number, height: number, scroll: number, projectStart: number, reduced: boolean, timelineHeight = height, clearAbout = false, aboutBlurStart = projectStart) {
   width = Math.max(1, width); height = Math.max(1, height)
   timelineHeight = Math.max(1, timelineHeight)
   const aspect = width / height
@@ -18,11 +18,12 @@ export function backgroundFrame(width: number, height: number, scroll: number, p
   const startX = reference.left / imageWidth + (reference.width / imageWidth - cropWidth) / 2
   const top = reference.top / imageHeight + (reference.height / imageHeight - cropHeight) / 2
   // The fixed canvas can be taller than the 100svh reading viewport on mobile.
-  const leavingStart = projectStart - timelineHeight * readingJourney.exitScreens
+  const leavingStart = clearAbout ? aboutBlurStart : projectStart - timelineHeight * readingJourney.exitScreens
   const travelScreens = .35 + .35 * smooth((width - 390) / (1024 - 390))
   const panDistance = Math.min(1 - cropWidth - startX, cropWidth * travelScreens)
   const pan = reduced ? 0 : smooth(scroll / Math.max(1, projectStart + timelineHeight * readingJourney.revealTailScreens))
-  const defocus = smooth((scroll - leavingStart) / (timelineHeight * (readingJourney.exitScreens + readingJourney.revealTailScreens)))
+  const defocusDistance = clearAbout ? Math.max(1, projectStart - leavingStart) : timelineHeight * (readingJourney.exitScreens + readingJourney.revealTailScreens)
+  const defocus = smooth((scroll - leavingStart) / defocusDistance)
   const readingShade = reduced ? 0 : smooth(scroll / Math.max(1, leavingStart))
     * (1 - smooth((scroll - leavingStart) / (timelineHeight * readingJourney.exitScreens)))
   const crop: BackgroundCrop = {

@@ -55,7 +55,7 @@ describe('paper hover gallery', () => {
   it('shows only the approved experience and focus rows without contact duplication', () => {
     const { container } = setup(); tick(2)
     const chapter = container.querySelector('.paper-gallery__chapter')!
-    expect(chapter).toHaveTextContent('Experience & practice')
+    expect(chapter).toHaveTextContent('A BRIEF INTRO FOR MY WORK')
     expect(chapter).toHaveTextContent('Experience3 年 UI/UX 设计经验')
     expect(chapter).toHaveTextContent('Focus影视与内容平台 · 内容生产&消费两端')
     expect(chapter).not.toHaveTextContent('Exploration')
@@ -674,7 +674,7 @@ it('removes the requested editorial copy and continuously scrubs progress within
   expect(container).not.toHaveTextContent('Everyday experiences.')
   expect(container).not.toHaveTextContent('PRODUCT · INTERACTION · MOTION')
   expect(container).toHaveTextContent('Selected works')
-  expect(container).toHaveTextContent('Experience & practice')
+  expect(container).toHaveTextContent('A BRIEF INTRO FOR MY WORK')
   shell.scrollTop = 2520 * .26; fireEvent.scroll(shell); tick(100)
   const early = value()
   expect(progress).toHaveAccessibleName('Project 1 of 4')
@@ -800,23 +800,23 @@ it('returns to the same static-list position after a reduced-motion detail visit
   expect(restored.container.querySelector<HTMLElement>('.site-shell')!.scrollTop).toBe(400)
 })
 
-it('retains the pre-entry scroll position when opening a cover as the gallery appears', () => {
+it('restores the entry-boundary scroll position after opening and visiting a project', () => {
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
     const shell = this.closest<HTMLElement>('.site-shell')
     return new DOMRect(0, this.id === 'projects' ? 1000 - (shell?.scrollTop ?? 0) : 0, 1280, 720)
   })
   const first = setup(); tick(2)
   const shell = first.container.querySelector<HTMLElement>('.site-shell')!
-  shell.scrollTop = 950; fireEvent.scroll(shell); tick(80)
+  shell.scrollTop = 1000; fireEvent.scroll(shell); tick(80)
   scene.hitTest.mockReturnValue(0)
   fireEvent.click(first.container.querySelector('.paper-gallery__stage')!, { clientX: 640, clientY: 360 }); tick(90)
   const view = screen.getByRole('link', { name: '查看' })
   view.addEventListener('click', event => event.preventDefault()); fireEvent.click(view)
   first.unmount()
   const restored = setup()
-  expect(restored.container.querySelector<HTMLElement>('.site-shell')!.scrollTop).toBe(950)
+  expect(restored.container.querySelector<HTMLElement>('.site-shell')!.scrollTop).toBe(1000)
   fireEvent.click(screen.getByRole('button', { name: '返回' })); tick(90)
-  expect(restored.container.querySelector<HTMLElement>('.site-shell')!.scrollTop).toBe(950)
+  expect(restored.container.querySelector<HTMLElement>('.site-shell')!.scrollTop).toBe(1000)
 })
 
 
@@ -874,4 +874,80 @@ it.each([false, true])('gates gallery copy until the measured introduction exit 
       else expect(group).not.toHaveAttribute('inert')
     }
   }
+})
+
+
+it('waits for full stage arrival, completes its entrance without more scroll, and safely reverses', () => {
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+    const shell = this.closest<HTMLElement>('.site-shell')
+    const scroll = shell?.scrollTop ?? 0
+    return new DOMRect(0, this.id === 'projects' ? 1000 - scroll : this.classList.contains('paper-gallery__stage') ? Math.max(0, 1000 - scroll) : 0, 1280, 720)
+  })
+  const view = render(<div className="site-shell reading-shell" data-reading-complete="true"><section id="about" data-about-chapter /><PaperProjectGallery /></div>)
+  const shell = view.container.querySelector<HTMLElement>('.site-shell')!
+  const stage = view.container.querySelector<HTMLElement>('.paper-gallery__stage')!
+  const card = view.container.querySelector<HTMLElement>('[data-paper]')!
+  shell.scrollTop = 700; fireEvent.scroll(shell); tick(3)
+  expect(stage).toHaveAttribute('inert')
+  expect(Number(stage.style.opacity)).toBe(0)
+  scene.hitTest.mockReturnValue(0)
+  fireEvent.click(stage, { clientX: 640, clientY: 600 })
+  fireEvent.keyDown(card, { key: 'Enter' }); tick(3)
+  expect(shell.style.overflow).not.toBe('hidden')
+  expect(view.container.querySelector('#projects')).not.toHaveAttribute('data-focus', 'true')
+  shell.scrollTop = 1000; fireEvent.scroll(shell); tick(3)
+  expect(stage).toHaveAttribute('inert')
+  expect(Number(stage.style.opacity)).toBeGreaterThan(0)
+  const entrance = view.container.querySelector<HTMLElement>('.paper-gallery__entrance')!
+  expect(entrance.style.transform).not.toBe('translate3d(0, 0px, 0)')
+  tick(55) // No wheel or scroll: the clock must finish the entire entrance.
+  expect(entrance.style.transform).toBe('translate3d(0, 0px, 0)')
+  expect(scene.paint.mock.calls.at(-1)?.[0]).toBe(0)
+  expect(scene.paint.mock.calls.at(-1)?.[2]).toEqual(Array(8).fill(1))
+  expect(view.container.querySelector('.paper-gallery__progress')).toHaveAttribute('aria-label', 'Project 1 of 4')
+  shell.scrollTop = 1001; fireEvent.scroll(shell); tick(4)
+  expect(scene.paint.mock.calls.at(-1)?.[0]).toBe(0)
+  shell.scrollTop = 1000; fireEvent.scroll(shell); tick(3)
+  expect(stage).not.toHaveAttribute('inert')
+  fireEvent.click(stage, { clientX: 640, clientY: 360 }); tick(90)
+  expect(shell.style.overflow).toBe('hidden')
+  fireEvent.click(screen.getByRole('button', { name: '返回' })); tick(90)
+  expect(shell.style.overflow).not.toBe('hidden'); expect(shell.scrollTop).toBe(1000)
+  shell.scrollTop = 700; fireEvent.scroll(shell); tick(3)
+  expect(stage).toHaveAttribute('inert'); expect(shell.scrollTop).toBe(700)
+  view.unmount()
+})
+
+it('cancels an unfinished entrance on reverse without consuming wheel input, and restarts cleanly', () => {
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+    return new DOMRect(0, this.id === 'projects' ? 1000 - (this.closest<HTMLElement>('.site-shell')?.scrollTop ?? 0) : 0, 1280, 720)
+  })
+  const view = render(<div className="site-shell reading-shell" data-reading-complete="true"><section id="about" data-about-chapter /><PaperProjectGallery /></div>)
+  const shell = view.container.querySelector<HTMLElement>('.site-shell')!
+  const stage = view.container.querySelector<HTMLElement>('.paper-gallery__stage')!
+  shell.scrollTop = 1000; fireEvent.scroll(shell); tick(12)
+  expect(Number(stage.style.opacity)).toBeGreaterThan(0)
+  expect(Number(stage.style.opacity)).toBeLessThan(1)
+  const wheel = new WheelEvent('wheel', { deltaY: -10, bubbles: true, cancelable: true })
+  expect(shell.dispatchEvent(wheel)).toBe(true)
+  shell.scrollTop = 990; fireEvent.scroll(shell); tick(4)
+  expect(stage.style.opacity).toBe('0'); expect(stage).toHaveAttribute('inert')
+  expect(shell.style.overflow).not.toBe('hidden')
+  shell.scrollTop = 1000; fireEvent.scroll(shell); tick(55)
+  expect(stage.style.opacity).toBe('1'); expect(stage).not.toHaveAttribute('inert')
+})
+
+it('uses elapsed wall time for the entrance even when animation frames are sparse', () => {
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+    return new DOMRect(0, this.id === 'projects' ? 1000 - (this.closest<HTMLElement>('.site-shell')?.scrollTop ?? 0) : 0, 1280, 720)
+  })
+  const view = render(<div className="site-shell reading-shell" data-reading-complete="true"><section id="about" data-about-chapter /><PaperProjectGallery /></div>)
+  const shell = view.container.querySelector<HTMLElement>('.site-shell')!
+  shell.scrollTop = 1000; fireEvent.scroll(shell); tick(1)
+  act(() => {
+    time += 800
+    const callbacks = [...frames.values()]; frames.clear(); callbacks.forEach(callback => callback(time))
+  })
+  expect(view.container.querySelector('#projects')).toHaveAttribute('data-entrance', 'complete')
+  expect(view.container.querySelector<HTMLElement>('.paper-gallery__entrance')!.style.transform).toBe('translate3d(0, 0px, 0)')
 })

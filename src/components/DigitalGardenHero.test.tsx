@@ -18,11 +18,9 @@ describe('DigitalGardenHero', () => {
     expect(screen.getByText('Dec27-Xu')).toBeInTheDocument()
     const card = screen.getByRole('region', { name: 'About Yulia' })
     const statement = screen.getByText('In past projects,')
-    const closing = screen.getByText('Here are 4 selected projects')
     expect(statement.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(card.compareDocumentPosition(closing) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(screen.getByText('Here are 4 selected projects')).toBeInTheDocument()
-    expect(screen.getByText('that show how I design.')).toBeInTheDocument()
+    expect(screen.queryByText('Here are 4 selected projects')).not.toBeInTheDocument()
+    expect(screen.queryByText('that show how I design.')).not.toBeInTheDocument()
     expect(screen.getByRole('region', { name: 'Yulia portfolio introduction' })).toHaveClass('snap-section')
   })
 

@@ -18,9 +18,9 @@ export function paperPose(distance: number, width: number, height: number) {
   const depth = Math.abs(d)
   const narrow = width < 700
   return {
-    x: (narrow ? 0 : -width * .21) - Math.sin(d * 0.28) / Math.sin(0.28) * width * (narrow ? 0.60 : 0.24),
-    y: height * ((narrow ? 0.025 : 0.215) + d * (narrow ? 0.18 : 0.155) + 0.009 * d * d),
-    z: d * (narrow || d >= 0 ? 95 : 35),
+    x: (narrow ? 0 : -width * .21) - Math.sin(d * 0.28) / Math.sin(0.28) * width * (narrow ? 0.60 : 0.19),
+    y: height * ((narrow ? 0.025 : 0.215) + d * (narrow ? 0.18 : 0.125) + 0.009 * d * d),
+    z: d * 95,
     rotateX: -0.13 + d * 0.018,
     rotateY: -0.38 - d * 0.025,
     rotateZ: 0.065 + d * 0.012,
@@ -31,7 +31,7 @@ export function paperPose(distance: number, width: number, height: number) {
 }
 
 export function paperWidth(width: number, height: number) {
-  return Math.min(width * (width < 700 ? 0.76 : 0.25), width < 700 ? 440 : 520, height * 0.38 * 16 / 9)
+  return Math.min(width * (width < 700 ? 0.76 : 0.23), 440, height * 0.38 * 16 / 9)
 }
 
 /** Short, frame-rate independent inertia; settled holds still have an exact phase. */

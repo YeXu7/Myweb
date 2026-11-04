@@ -36,8 +36,8 @@ describe('native-scroll paper gallery', () => {
     expect(focus.opacity).toBe(1)
     expect(paperPose(4, 1280, 720).opacity).toBe(0)
   })
-  it('gives desktop covers a quarter-screen measure while keeping short screens legible', () => {
-    expect(paperWidth(1440, 900)).toBe(1440 * 0.25)
+  it('matches the local preview cover size while keeping short screens legible', () => {
+    expect(paperWidth(1440, 900)).toBe(1440 * 0.23)
     expect(paperWidth(390, 700)).toBeGreaterThan(240)
     expect(paperWidth(1280, 400) * 9 / 16).toBeLessThan(400 * 0.4)
   })
@@ -96,18 +96,16 @@ it('anchors the first desktop cover in the upper-left with later covers spanning
   expect(paperPose(0, 390, 700).x).toBe(0)
 })
 
-it('keeps desktop covers overlapping and carries visible tail sheets beyond the viewport', () => {
+// Parameters verified from the actual 4173 bundle main-CI4lwR0p.js.
+it('matches local preview spacing and perspective without moving the gallery anchor', () => {
   for (const [w, h] of [[1280, 720], [1440, 900], [1920, 1080]]) {
-    const project = (d: number) => {
-      const p = paperPose(d, w, h)
-      const perspective = 1200 / (1200 - p.z)
-      const half = paperWidth(w, h) * Math.cos(p.rotateY) / 2 * perspective
-      const x = w / 2 + p.x * perspective
-      return { left: x - half, right: x + half, width: half * 2, opacity: p.opacity }
+    expect(paperWidth(w, h)).toBe(Math.min(w * .23, 440, h * .38 * 16 / 9))
+    const anchor = paperPose(0, w, h)
+    for (const d of [-3.5, -3, -2, -1, .5, 1]) {
+      const pose = paperPose(d, w, h)
+      expect(pose.x - anchor.x).toBeCloseTo(-Math.sin(d * .28) / Math.sin(.28) * w * .19)
+      expect(pose.y - anchor.y).toBeCloseTo(h * (d * .125 + .009 * d * d))
+      expect(pose.z).toBe(d * 95)
     }
-    for (let d = 0; d > -3.5; d -= .5) expect(project(d).right).toBeGreaterThan(project(d - .5).left)
-    expect(project(-3.5).right).toBeGreaterThan(w)
-    expect(project(-3.5).opacity).toBe(1)
-    expect(project(-3).width / project(0).width).toBeGreaterThan(.9)
   }
 })

@@ -899,9 +899,9 @@ it('waits for full stage arrival, completes its entrance without more scroll, an
   expect(stage).toHaveAttribute('inert')
   expect(Number(stage.style.opacity)).toBeGreaterThan(0)
   const entrance = view.container.querySelector<HTMLElement>('.paper-gallery__entrance')!
-  expect(entrance.style.transform).not.toBe('translate3d(0, 0px, 0)')
+  expect(entrance.style.transform).not.toBe('translate3d(0px, 0px, 0)')
   tick(55) // No wheel or scroll: the clock must finish the entire entrance.
-  expect(entrance.style.transform).toBe('translate3d(0, 0px, 0)')
+  expect(entrance.style.transform).toBe('translate3d(0px, 0px, 0)')
   expect(scene.paint.mock.calls.at(-1)?.[0]).toBe(0)
   expect(scene.paint.mock.calls.at(-1)?.[2]).toEqual(Array(8).fill(1))
   expect(view.container.querySelector('.paper-gallery__progress')).toHaveAttribute('aria-label', 'Project 1 of 4')
@@ -949,5 +949,5 @@ it('uses elapsed wall time for the entrance even when animation frames are spars
     const callbacks = [...frames.values()]; frames.clear(); callbacks.forEach(callback => callback(time))
   })
   expect(view.container.querySelector('#projects')).toHaveAttribute('data-entrance', 'complete')
-  expect(view.container.querySelector<HTMLElement>('.paper-gallery__entrance')!.style.transform).toBe('translate3d(0, 0px, 0)')
+  expect(view.container.querySelector<HTMLElement>('.paper-gallery__entrance')!.style.transform).toBe('translate3d(0px, 0px, 0)')
 })

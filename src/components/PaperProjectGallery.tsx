@@ -220,7 +220,7 @@ export function PaperProjectGallery() {
         else if (entranceStarted === null) entranceStarted = time
         entranceElapsed = focus ? galleryEntranceMs : advanceGalleryEntrance(0, shell.scrollTop >= start, entranceStarted === null ? 0 : time - entranceStarted, reduced)
         section.dataset.entrance = entranceComplete() ? 'complete' : shell.scrollTop >= start ? 'entering' : 'waiting'
-        writeTransform(entranceGroup, `translate3d(0, ${(1 - galleryEntranceProgress(entranceElapsed)) * height * .55}px, 0)`)
+        writeTransform(entranceGroup, `translate3d(${(1 - galleryEntranceProgress(entranceElapsed)) * width * .35}px, ${(1 - galleryEntranceProgress(entranceElapsed)) * height * .55}px, 0)`)
       }
       paintEditorial(reduced)
       section.dataset.keyboardPreview = String(keyboard && focused !== null && !focus)

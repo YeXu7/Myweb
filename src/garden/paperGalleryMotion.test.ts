@@ -83,3 +83,15 @@ describe('native-scroll paper gallery', () => {
     expect(simulate(16)).toBeLessThan(16)
   })
 })
+
+it('anchors the first desktop cover in the upper-left with later covers spanning the stage', () => {
+  for (const [width, height] of [[1280, 720], [1920, 1080], [1440, 900]]) {
+    const first = paperPose(0, width, height)
+    const last = paperPose(-3, width, height)
+    expect(width / 2 + first.x).toBeLessThan(width * .3)
+    expect(height / 2 - first.y).toBeLessThan(height * .3)
+    expect(width / 2 + last.x).toBeGreaterThan(width * .75)
+    expect(height / 2 - last.y).toBeGreaterThan(height * .55)
+  }
+  expect(paperPose(0, 390, 700).x).toBe(0)
+})

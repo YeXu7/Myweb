@@ -33,9 +33,25 @@
 .about-experience__work,
 .about-experience__capabilities { min-width: 0; width: min(100%, clamp(560px, 48vw, 680px)); position: relative; isolation: isolate; }
 .about-experience__capabilities { justify-self: end; }
-.about-experience__work::before, .about-experience__capabilities::before { content: ''; position: absolute; z-index: -1; inset: -48px -56px; pointer-events: none; background: linear-gradient(90deg, rgb(0 7 5 / 92%) 0%, rgb(0 7 5 / 78%) 44%, transparent 100%); mask-image: radial-gradient(ellipse at 35% 50%, #000 38%, transparent 74%); -webkit-mask-image: radial-gradient(ellipse at 35% 50%, #000 38%, transparent 74%); }
-
-.about-experience__capabilities::before { background: linear-gradient(270deg, rgb(0 7 5 / 92%) 0%, rgb(0 7 5 / 78%) 44%, transparent 100%); mask-image: radial-gradient(ellipse at 65% 50%, #000 38%, transparent 74%); -webkit-mask-image: radial-gradient(ellipse at 65% 50%, #000 38%, transparent 74%); }
+/* The scrim reaches the viewport edge independently of the reading measure. */
+.about-experience__work::before,
+.about-experience__capabilities::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: -80px;
+  bottom: -80px;
+  width: 100vw;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgb(0 7 5 / 92%) 0%, rgb(0 7 5 / 82%) 25%, rgb(0 7 5 / 52%) 48%, transparent 78%);
+  mask-image: linear-gradient(to bottom, transparent, #000 80px, #000 calc(100% - 80px), transparent);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 80px, #000 calc(100% - 80px), transparent);
+}
+.about-experience__work::before { left: -9vw; }
+.about-experience__capabilities::before {
+  right: -9vw;
+  background: linear-gradient(270deg, rgb(0 7 5 / 92%) 0%, rgb(0 7 5 / 82%) 25%, rgb(0 7 5 / 52%) 48%, transparent 78%);
+}
 
 .about-experience__company {
   display: grid;
@@ -136,7 +152,8 @@
   .about-experience__company { grid-template-columns: 58px minmax(0, 1fr); column-gap: 10px; }
   .about-experience__logo { width: 58px; }
   .about-experience__timeline > li { padding-left: 24px; }
-  .about-experience__work::before, .about-experience__capabilities::before { inset-inline: -24px; }
+  .about-experience__work::before { left: -24px; }
+  .about-experience__capabilities::before { left: -24px; right: auto; }
 }
 
 @media (max-width: 599px) { .about-experience__title { font-size: clamp(32px, 6vw, 48px); } }

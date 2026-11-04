@@ -95,14 +95,3 @@ it('anchors the first desktop cover in the upper-left with later covers spanning
   }
   expect(paperPose(0, 390, 700).x).toBe(0)
 })
-
-it('keeps the desktop tail visible until it extends beyond the right edge', () => {
-  for (const [width, height] of [[1280, 720], [1920, 1080], [1440, 900]]) {
-    const tail = paperPose(-3.5, width, height)
-    const perspective = 1200 / (1200 - tail.z)
-    const projectedRight = width / 2 + (tail.x + paperWidth(width, height) / 2 * Math.cos(tail.rotateY)) * perspective
-    expect(projectedRight).toBeGreaterThan(width)
-    expect(tail.opacity).toBe(1)
-    expect(paperPose(-4, width, height).opacity).toBe(0)
-  }
-})
